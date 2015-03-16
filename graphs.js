@@ -24,7 +24,7 @@ SIMGraphs.GraphCanvas = function(canvas){
 	this.context.font = "15px sans-serif";
 
 	this.graphs = this.makeGraphs();
-
+	this.isPlaying = false;
     }
     
     this.makeGraphs = function(){
@@ -37,7 +37,9 @@ SIMGraphs.GraphCanvas = function(canvas){
 	
 
 	for(var i = 0; i < types.length; i++){
-	    graphs[i] = new SIMGraphs.Graph();
+	    //have each graph take up the entire third of the canvas
+	    //right now, there is no space for buttons but that will be fixed
+	    graphs[i] = new SIMGraphs.Graph(0, i*spacePerGraph, spacePerGraph, canvas.width);
 	}
     }
 
@@ -62,11 +64,32 @@ SIMGraphs.GraphCanvas = function(canvas){
 	return array;
     }
 
+    
+    this.draw = function(){
+	if(this.isPlaying) this.stepGraphs();
+	
+
+    }
+
+    //should cause each graph to take one step
+    this.stepGraphs = function(){
+
+    }
+
     //initialize our canvas
     this.init(canvas);
 }
 
-SIMGraphs.Graph = function(){
+/*
+  A graph object. 
+
+  @param {Number} x The top-left x-coordinate of the graph
+  @param {Number} y The top-left y-coordinate of the graph
+  @param {Number} height The height of the graph in pixels(?)
+  @param {Number} width The width of the graph in pixels(?)
+
+*/
+SIMGraphs.Graph = function(x, y, height, width){
     
     this.init = function(){
 	console.log("Graph created");
@@ -78,17 +101,17 @@ SIMGraphs.Graph = function(){
 
     }
 
-    this.depthFirstSearch = function(){
+    this.depthFirstStep = function(){
 
 
     }
 
-    this.breadthFirstSearch = function(){
+    this.breadthFirstStep = function(){
 
     }
 
-    this.aStartSearch = function(){
-	
+    this.aStarStep = function(){
+
     }
 
     this.init();
