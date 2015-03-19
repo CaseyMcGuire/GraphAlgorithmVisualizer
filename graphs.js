@@ -1,5 +1,5 @@
-'use strict';//let's catch our errors early
-var SIMGraphs = function(){};
+
+var SIMGraphs = function(){'use strict';};
 var DEBUG = true;
 
 SIMGraphs.go = function() {
@@ -30,6 +30,9 @@ SIMGraphs.GraphCanvas = function(canvas){
     this.makeGraphs = function(){
 
 	var types = this.getPropertyArray("type");
+	for(var i = 0; i < types.length; i++){
+	    types[i] = SIMGraphs.Graph.parseTypeString(types[i]);
+	}
 
 	var graphs = new Array(types.length);
 	
@@ -39,7 +42,7 @@ SIMGraphs.GraphCanvas = function(canvas){
 	for(var i = 0; i < types.length; i++){
 	    //have each graph take up the entire third of the canvas
 	    //right now, there is no space for buttons but that will be fixed
-	    graphs[i] = new SIMGraphs.Graph(0, i*spacePerGraph, spacePerGraph, canvas.width);
+	    graphs[i] = new SIMGraphs.Graph(types[i], 0, i*spacePerGraph, spacePerGraph, canvas.width);
 	}
     }
 
@@ -83,16 +86,44 @@ SIMGraphs.GraphCanvas = function(canvas){
 /*
   A graph object. 
 
+  @param {Number} type A constant representing the type of the graph
   @param {Number} x The top-left x-coordinate of the graph
   @param {Number} y The top-left y-coordinate of the graph
   @param {Number} height The height of the graph in pixels(?)
   @param {Number} width The width of the graph in pixels(?)
 
 */
-SIMGraphs.Graph = function(x, y, height, width){
+SIMGraphs.Graph = function(type, x, y, height, width){
     
-    this.init = function(){
+    //see above for parameter specifications
+    this.init = function(type, x, y, height, width){
+
+	//first, figure out which type of graph we're using
+	if(type === SIMGraphs.Graph.DEPTH){
+	    this.algoStep = this.depthFirstStep;
+	    this.name = "Depth First Search";
+	}
+
+	else if(type === SIMGraphs.Graph.BREADTH){
+	    this.algoStep = this.breadthFirstStep;
+	    this.name = "Breadth First Search";
+	}
+
+	else if(type === SIMGraphs.Graph.ASTAR){
+	    this.algoStep = this.aStarStep;
+	    this.name = "A* Search";
+	}
+
+	else throw Error("no such type");
+
+	assert(this.name !== undefined);
+	assert(this.algoStep !== undefined);
 	console.log("Graph created");
+	
+	this.x = x;
+	this.y = y;
+	this.height = height;
+	this.width = width;
 	
     }
 
@@ -114,9 +145,23 @@ SIMGraphs.Graph = function(x, y, height, width){
 
     }
 
-    this.init();
+    this.init(type, x, y, height, width);
 
 }
+
+//some constants to help clear up code
+SIMGraphs.Graph.DEPTH = 0;
+SIMGraphs.Graph.BREADTH = 1;
+SIMGraphs.Graph.ASTAR = 2;
+
+SIMGraphs.Graph.parseTypeString = function(string){
+    string = string.toLowerCase();
+    if(string === "depth") return SIMGraphs.Graph.DEPTH;
+    if(string === "breadth") return SIMGraphs.Graph.BREADTH;
+    if(string === "astar") return SIMGraphs.Graph.ASTAR;
+    throw Error("Unknown graph type");
+}
+
 //An assertion function for testing
 //http://stackoverflow.com/questions/15313418/javascript-assert
 function assert(condition, message){
