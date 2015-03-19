@@ -25,6 +25,10 @@ SIMGraphs.GraphCanvas = function(canvas){
 
 	this.graphs = this.makeGraphs();
 	this.isPlaying = false;
+
+
+	//draw the board
+	this.draw();
     }
     
     this.makeGraphs = function(){
@@ -34,8 +38,11 @@ SIMGraphs.GraphCanvas = function(canvas){
 	    types[i] = SIMGraphs.Graph.parseTypeString(types[i]);
 	}
 	
-	var nodeDimensions = this.getPropertyArray("node");
-	console.log(nodeDimensions);
+	//find out how many nodes along the x and y axes
+	var nodeDimensions = this.getPropertyArray("nodes");
+	for(var i = 0; i < nodeDimensions.length; i++){
+	    nodeDimensions[i] = parseInt(nodeDimensions[i],10);
+	}
 	var graphs = new Array(types.length);
 	
 	var spacePerGraph = this.canvas.height/graphs.length;
@@ -44,8 +51,9 @@ SIMGraphs.GraphCanvas = function(canvas){
 	for(var i = 0; i < types.length; i++){
 	    //have each graph take up the entire third of the canvas
 	    //right now, there is no space for buttons but that will be fixed
-	    graphs[i] = new SIMGraphs.Graph(types[i], 0, i*spacePerGraph, spacePerGraph, canvas.width);
+	    graphs[i] = new SIMGraphs.Graph(types[i], 0, i*spacePerGraph, spacePerGraph, canvas.width, nodeDimensions[0], nodeDimensions[1]);
 	}
+	return graphs;
     }
 
     /*
@@ -72,11 +80,14 @@ SIMGraphs.GraphCanvas = function(canvas){
     
     this.draw = function(){
 	if(this.isPlaying) this.stepGraphs();
-	
+	for(var i = 0; i < this.graphs.length; i++){
+	    this.graphs[i].draw(this.context);
+	}
 
     }
 
     //should cause each graph to take one step
+    //I'll need a counter at some point
     this.stepGraphs = function(){
 
     }
@@ -93,9 +104,11 @@ SIMGraphs.GraphCanvas = function(canvas){
   @param {Number} y The top-left y-coordinate of the graph
   @param {Number} height The height of the graph in pixels(?)
   @param {Number} width The width of the graph in pixels(?)
+  @param {Number} numXNodes The number of nodes along the X axis
+  @param {Number} numYNodes The number of nodes along the Y axis
 
 */
-SIMGraphs.Graph = function(type, x, y, height, width){
+SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
     
     //see above for parameter specifications
     this.init = function(type, x, y, height, width){
@@ -120,17 +133,68 @@ SIMGraphs.Graph = function(type, x, y, height, width){
 
 	assert(this.name !== undefined);
 	assert(this.algoStep !== undefined);
-	console.log("Graph created");
+//	console.log("Graph created");
 	
 	this.x = x;
 	this.y = y;
 	this.height = height;
 	this.width = width;
 	
+//	console.log(numXNodes);
+//	console.log(numYNodes);
+
+	//create our nodes
+	//at some point, probably want to add colors and dimensions and such
+	this.nodes = [];
+	for(var i = 0; i < numXNodes; i++){
+	   // console.log(i);
+	    for(var j = 0; j < numYNodes; j++){
+		//console.log(j);
+		this.nodes[i] = new Array();
+		this.nodes[i][j] = new SIMGraphs.Graph.Node();
+		//console.log(this.nodes[i][j]);
+		assert(this.nodes[i][j] !== undefined, "We have a problem");
+	    }
+	}
+//	console.log(this.nodes);
     }
 
     this.draw = function(context){
 	
+	//Give the background a light grayish color
+	//perhaps this should go in the node ?
+	context.fillStyle = "#eee";
+	context.fillRect(this.x, this.y, this.width, this.height);
+
+
+	//now, lets the draw the graph
+	context.strokeStyle = "#000000";
+	context.beginPath();
+
+	//draw delimiters between our graphs (still need space for buttons and counter)
+	context.moveTo(this.x, this.y);
+	context.lineTo(this.width, this.y);
+	
+	context.closePath();
+	context.stroke();	
+	
+	for(var i = this.nodes.length; i++){
+	    for(var j = 0; j < this.nodes[j].length; j++){
+//		this.nodes[i][j].draw(context);
+	    }
+	}
+
+	//draw x axis
+	for(var i = 0; i < this.nodes.length; i++){
+
+	}
+
+	//draw y axis
+	//the inner array should all be the same length so using the zero-index should be fine.
+	for(var j = 0; j < this.nodes[0].length; j++){
+
+	}
+	//draw each node here!
 
     }
 
@@ -154,11 +218,14 @@ SIMGraphs.Graph = function(type, x, y, height, width){
 SIMGraphs.Graph.Node = function(){
 
     this.init = function(){
-
+//	console.log("New node created");
     }
 
-    
+    this.draw(context){
+	
+    }
 
+    this.init();
 }
 
 //some constants to help clear up code
