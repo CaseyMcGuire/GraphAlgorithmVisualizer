@@ -33,7 +33,9 @@ SIMGraphs.GraphCanvas = function(canvas){
 	for(var i = 0; i < types.length; i++){
 	    types[i] = SIMGraphs.Graph.parseTypeString(types[i]);
 	}
-
+	
+	var nodeDimensions = this.getPropertyArray("node");
+	console.log(nodeDimensions);
 	var graphs = new Array(types.length);
 	
 	var spacePerGraph = this.canvas.height/graphs.length;
@@ -146,6 +148,16 @@ SIMGraphs.Graph = function(type, x, y, height, width){
     }
 
     this.init(type, x, y, height, width);
+
+}
+
+SIMGraphs.Graph.Node = function(){
+
+    this.init = function(){
+
+    }
+
+    
 
 }
 
