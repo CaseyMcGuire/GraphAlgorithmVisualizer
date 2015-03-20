@@ -264,7 +264,7 @@ SIMGraphs.Graph.Node = function(x, y, width, height){
 	this.y = y;
 	this.width = width;
 	this.height = height;
-	this.type = SIMGraphs.Graph.Node.OPEN;
+	this.type = SIMGraphs.Graph.Node.UNEXPLORED;
 	this.radius = this.width > this.height ? this.height * .30 : this.width * .30;
 	assert(this.type !== undefined);
     }
@@ -285,9 +285,6 @@ SIMGraphs.Graph.Node = function(x, y, width, height){
 	else if(this.type === SIMGraphs.Graph.Node.CLOSED){
 	    this.drawClosed(context);
 	}
-	else if(this.type === SIMGraphs.Graph.Node.EXPLORED){
-	    this.drawExplored(context);
-	}
 	else if(this.type === SIMGraphs.Graph.Node.GOAL){
 	    this.drawGoal(context);
 	}
@@ -304,15 +301,13 @@ SIMGraphs.Graph.Node = function(x, y, width, height){
     }
 
     this.drawOpen = function(context){
-	
+	this.drawLegs(context);
+	this.drawCircle(context, 'white');
     }
     
     this.drawClosed = function(context){
-	
-    }
-    
-    this.drawExplored = function(context){
-
+	this.drawLegs(context);
+	this.drawCircle(context, '#ddd');//dark gray ?
     }
 
     this.drawGoal = function(context){
@@ -320,7 +315,8 @@ SIMGraphs.Graph.Node = function(x, y, width, height){
     }
 
     this.drawActive = function(context){
-
+	this.drawLegs(context);
+	this.drawCircle(context, 'black');
     }
 
     this.drawCircle = function(context, color){
@@ -337,38 +333,24 @@ SIMGraphs.Graph.Node = function(x, y, width, height){
     this.drawLegs = function(context){
 
 	//draw top-to-bottom diagonal leg
-	context.beginPath();
-	console.log("hello world");
-	context.moveTo(this.x, this.y);
-	context.lineTo(this.x + width, this.y + height);
-	context.stroke();
-	context.closePath();
-	
-	//draw bottom-to-top diagonal lef
-	context.beginPath();
-	context.moveTo(this.x, this.y + height);
-	context.lineTo(this.x + width, this.y);
-	context.stroke();
-	context.closePath();
+	this.drawLeg(context, this.x, this.y, this.x + this.width, this.y + this.height);
 
+	//draw bottom-to-top diagonal leg
+	this.drawLeg(context, this.x, this.y + this.height, this.x + this.width, this.y);
+	
 	//draw side-to-side leg
-	context.beginPath();
-	context.moveTo(this.x, this.y + (height * .5));
-	context.lineTo(this.x + width, this.y + (height * .5));
-	context.stroke();
-	context.closePath();
+	this.drawLeg(context, this.x, this.y + (this.height * .5), this.x + this.width, this.y + (this.height * .5));
 
 	//draw top-to-bottom leg
-	context.beginPath();
-	context.moveTo(this.x + (width * .5), this.y);
-	context.lineTo(this.x + (width * .5), this.y + this.height);
-	context.stroke();
-	context.closePath();
-
+	this.drawLeg(context, this.x + (this.width * .5), this.y, this.x + (this.width * .5), this.y + this.height);
     }
     
-    this.drawLeg = function(){
-	
+    this.drawLeg = function(context, beginX, beginY, endX, endY){
+	context.beginPath();
+	context.moveTo(beginX, beginY);
+	context.lineTo(endX, endY);
+	context.stroke();
+	context.closePath();
     }
 
 
@@ -385,9 +367,8 @@ SIMGraphs.Graph.ASTAR = 2;
 SIMGraphs.Graph.Node.UNEXPLORED = 0;
 SIMGraphs.Graph.Node.OPEN = 1;
 SIMGraphs.Graph.Node.CLOSED = 2;
-SIMGraphs.Graph.Node.EXPLORED = 3;
-SIMGraphs.Graph.Node.GOAL = 4;
-SIMGraphs.Graph.Node.ACTIVE = 5;
+SIMGraphs.Graph.Node.GOAL = 3;
+SIMGraphs.Graph.Node.ACTIVE = 4;
 
 SIMGraphs.Graph.parseTypeString = function(string){
     string = string.toLowerCase();
