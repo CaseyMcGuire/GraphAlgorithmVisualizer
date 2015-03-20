@@ -18,11 +18,13 @@ SIMGraphs.go = function() {
 SIMGraphs.GraphCanvas = function(canvas){
 
     
+    
     this.init = function(canvas){
 	this.canvas = canvas;
 	this.context = canvas.getContext('2d');
 	this.context.font = "15px sans-serif";
-
+	this.controlsHeight = 100;//controls should have about 100 pixels regardless of how
+       	                          //big the canvas is
 	this.graphs = this.makeGraphs();
 	this.isPlaying = false;
 
@@ -45,8 +47,10 @@ SIMGraphs.GraphCanvas = function(canvas){
 	}
 	var graphs = new Array(types.length);
 	
-	var spacePerGraph = this.canvas.height/graphs.length;
-	
+	var spacePerGraph = (this.canvas.height-this.controlsHeight)/graphs.length;
+	console.log(this.canvas.height);
+	console.log(this.controlsHeight);
+	console.log(spacePerGraph);
 
 	for(var i = 0; i < types.length; i++){
 	    //have each graph take up the entire third of the canvas
@@ -138,7 +142,9 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 	
 	this.x = x;
 	this.y = y;
-	this.height = height;
+	this.panelHeight = 50;//about 50 pixels should be reserved for the name and
+	                               //and the counter
+	this.height = height - this.panelHeight;
 	this.width = width;
 	
 	//get the dimensions for each node on the canvas
@@ -172,24 +178,17 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 
 	//now, lets the draw the graph
 	context.strokeStyle = "#000000";
-	context.beginPath();
 
-	
-	//draw a black bar between our graphs (still need space for buttons and counter)
-	//at some point, I'm going to have to put some space for the graph's name, counter, etc.
-	context.lineWidth = 5;
-	context.moveTo(this.x, this.y);
-	context.lineTo(this.width, this.y);
-	
-	context.closePath();
 	context.stroke();
 	context.lineWidth = 1;
 	//console.log("hellol");
+	context.save();
 	for(var i = 0;i< this.nodes.length; i++){
 	    for(var j = 0; j < this.nodes[i].length; j++){
 		//		this.nodes[i][j].draw(context);
 	    }
 	}
+	context.restore();
 
 	//draw bars down the y-axis
 	for(var i = 0; i < this.nodes.length; i++){
@@ -210,12 +209,12 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 	    context.closePath();
 	    context.stroke();
 	}
-	//draw each node here!
 
+	
+	
     }
 
     this.depthFirstStep = function(){
-
 
     }
 
@@ -267,6 +266,7 @@ SIMGraphs.Graph.Node = function(x, y){
     this.init(x, y);
 }
 
+
 //some constants to help clear up code
 SIMGraphs.Graph.DEPTH = 0;
 SIMGraphs.Graph.BREADTH = 1;
@@ -278,6 +278,20 @@ SIMGraphs.Graph.parseTypeString = function(string){
     if(string === "breadth") return SIMGraphs.Graph.BREADTH;
     if(string === "astar") return SIMGraphs.Graph.ASTAR;
     throw Error("Unknown graph type");
+}
+
+
+/////////////////////////////////////////////////
+// THE BUTTON OBJECT
+////////////////////////////////////////////////
+
+SIMGraphs.Button = function(){
+
+    this.init = function(){
+	console.log("A button was just created");
+    }
+
+    this.init();
 }
 
 //An assertion function for testing
