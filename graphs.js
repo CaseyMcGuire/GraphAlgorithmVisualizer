@@ -101,8 +101,8 @@ SIMGraphs.GraphCanvas = function(canvas){
   A graph object. 
 
   @param {Number} type A constant representing the type of the graph
-  @param {Number} x The top-left x-coordinate of the graph
-  @param {Number} y The top-left y-coordinate of the graph
+  @param {Number} x The top-left x-coordinate of the graph in terms of the canvas
+  @param {Number} y The top-left y-coordinate of the graph in terms of the canvas
   @param {Number} height The height of the graph in pixels(?)
   @param {Number} width The width of the graph in pixels(?)
   @param {Number} numXNodes The number of nodes along the X axis
@@ -142,8 +142,8 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 	this.width = width;
 	
 	//get the dimensions for each node on the canvas
-	var xPixels = this.width / numXNodes;
-	var yPixels = this.height / numYNodes;
+	this.xPixels = this.width / numXNodes;
+	this.yPixels = this.height / numYNodes;
 
 
 	//create our nodes
@@ -154,7 +154,7 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 	    for(var j = 0; j < numYNodes; j++){
 		//console.log(j);
 		this.nodes[i] = new Array();
-		this.nodes[i][j] = new SIMGraphs.Graph.Node(i * xPixels, j * yPixels + this.y);
+		this.nodes[i][j] = new SIMGraphs.Graph.Node(i * this.xPixels, j * this.yPixels + this.y);
 		
 		assert(this.nodes[i][j] !== undefined, "We have a problem");
 	    }
@@ -174,12 +174,16 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 	context.strokeStyle = "#000000";
 	context.beginPath();
 
-	//draw delimiters between our graphs (still need space for buttons and counter)
+	
+	//draw a black bar between our graphs (still need space for buttons and counter)
+	//at some point, I'm going to have to put some space for the graph's name, counter, etc.
+	context.lineWidth = 5;
 	context.moveTo(this.x, this.y);
 	context.lineTo(this.width, this.y);
 	
 	context.closePath();
-	context.stroke();	
+	context.stroke();
+	context.lineWidth = 1;
 	//console.log("hellol");
 	for(var i = 0;i< this.nodes.length; i++){
 	    for(var j = 0; j < this.nodes[i].length; j++){
@@ -187,18 +191,24 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 	    }
 	}
 
-	//draw x axis
-
+	//draw bars down the y-axis
 	for(var i = 0; i < this.nodes.length; i++){
 	    context.beginPath();
+	    context.moveTo(i * this.xPixels, this.y);
+	    context.lineTo(i * this.xPixels, this.y + this.height);
 	    context.closePath();
+	    context.stroke();
 	}
 
 
-	//draw y axis
+	//draw bars along the x-axis
 	//the inner array should all be the same length so using the zero-index should be fine.
 	for(var j = 0; j < this.nodes[0].length; j++){
-
+	    context.beginPath();
+	    context.moveTo(this.x, j * this.yPixels + this.y);
+	    context.lineTo(this.x + this.width, j * this.yPixels + this.y);
+	    context.closePath();
+	    context.stroke();
 	}
 	//draw each node here!
 
@@ -234,13 +244,14 @@ SIMGraphs.Graph.Node = function(x, y){
 	this.x = x;
 	this.y = y;
 
+	/*
 	console.log('========');
 	console.log("x");
 	console.log(x);
 	console.log("y");
 	console.log(y);
 	console.log('========');
-
+	*/
 	//some other constants I think this might need at some point
 	//this.isWall = false;
 	//this.isOnOpenSet = false;
