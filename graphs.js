@@ -94,7 +94,9 @@ SIMGraphs.GraphCanvas = function(canvas){
     //should cause each graph to take one step
     //I'll need a counter at some point
     this.stepGraphs = function(){
-
+	for(var i = 0; i < this.graphs.length; i++){
+	    this.graphs[i].algoStep();
+	}
     }
 
     //initialize our canvas
@@ -123,16 +125,19 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 	    this.algoStep = this.depthFirstStep;
 	    this.name = "Depth First Search";
 	    this.stack = [];
+
 	}
 
 	else if(type === SIMGraphs.Graph.BREADTH){
 	    this.algoStep = this.breadthFirstStep;
 	    this.name = "Breadth First Search";
+	    this.queue = [];
 	}
 
 	else if(type === SIMGraphs.Graph.ASTAR){
 	    this.algoStep = this.aStarStep;
 	    this.name = "A* Search";
+	   
 	}
 
 	else throw Error("no such type");
@@ -164,26 +169,22 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 
 
 		this.nodes[i][j] = new SIMGraphs.Graph.Node(i * this.xPixels, j * this.yPixels + this.y, this.xPixels, this.yPixels);		
-		assert(this.nodes[i][j] !== undefined, "We have a problem");
+		assert(this.nodes[i][j] !== undefined, "One of our nodes is undefined");
 	    }
 	}
 	
 	//for right now, lets make the beginning node in the bottom left corner and the goal node
 	//in the top right corner
-	var v = this.nodes[0][numYNodes - 1];//.isActive = true;//for testing purposes
-	var goal = this.nodes[numXNodes - 1][0];//.isGoal = true;
-	v.isActive = true;
-	goal.isGoal = true;
+	var v = this.nodes[0][numYNodes - 1];//beginning active node
+	var goal = this.nodes[numXNodes - 1][0];//goal node
+	v.type = SIMGraphs.Graph.Node.ACTIVE;
+	goal.type = SIMGraphs.Graph.Node.GOAL;
+	assert(v.type !== undefined);
+	assert(goal.type !== undefined);
 //	console.log(this.nodes);
     }
 
     this.draw = function(context){
-	
-	//Give the background a light grayish color
-	//perhaps this should go in the node ?
-	context.fillStyle = "#eee";
-	context.fillRect(this.x, this.y, this.width, this.height);
-
 
 	//now, lets the draw the graph
 	context.strokeStyle = "#000000";
@@ -244,6 +245,8 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 
 }
 
+
+
 //perhaps want to add i and j as well?
 /*
   A single node in the graph
@@ -261,38 +264,78 @@ SIMGraphs.Graph.Node = function(x, y, width, height){
 	this.y = y;
 	this.width = width;
 	this.height = height;
-	this.isActive = false;//whether this is the current node
-	this.isGoal = false;
-	/*
-	console.log('========');
-	console.log("x");
-	console.log(x);
-	console.log("y");
-	console.log(y);
-	console.log('========');
-	*/
-	//some other constants I think this might need at some point
-	
-	//this.isWall = false;
-	//this.isOnOpenSet = false;
-	//this.isOnClosedSet = false;
-	//this.color = "#000";//fine for right now
-	
+	this.type = SIMGraphs.Graph.Node.OPEN;
+	this.radius = this.width > this.height ? this.height * .30 : this.width * .30;
+	assert(this.type !== undefined);
     }
 
     this.draw = function(context){
 
-	//this is getting messy... probably wanna start doing some cleanup
-	if(this.isGoal === true){
-	    context.beginPath();
-            var radius = width > height ? height*.30 : width*.30;
-            context.arc(this.x + (width * .5), this.y + (height * .5), radius, 0, 2*Math.PI, true);
-            context.fillStyle = 'green';
-            context.fill();
-            context.closePath();
-	    return;
+	//right now, give each node a light grayish background color
+
+	this.drawBackground(context);
+
+	//if its the goal node, just put a green node and return
+	if(this.type === SIMGraphs.Graph.Node.UNEXPLORED){
+	    //do nothing (for now?)
 	}
-	if(this.isActive === false) return;//this will be changed later
+	else if(this.type === SIMGraphs.Graph.Node.OPEN){
+	    this.drawOpen(context);
+	}
+	else if(this.type === SIMGraphs.Graph.Node.CLOSED){
+	    this.drawClosed(context);
+	}
+	else if(this.type === SIMGraphs.Graph.Node.EXPLORED){
+	    this.drawExplored(context);
+	}
+	else if(this.type === SIMGraphs.Graph.Node.GOAL){
+	    this.drawGoal(context);
+	}
+	else if(this.type === SIMGraphs.Graph.Node.ACTIVE){
+	    this.drawActive(context);
+	}else{
+	    throw Error("Invalid type");
+	}
+    }
+
+    this.drawBackground = function(context){
+	context.fillStyle = "#eee";
+	context.fillRect(this.x, this.y, this.width, this.height);	
+    }
+
+    this.drawOpen = function(context){
+	
+    }
+    
+    this.drawClosed = function(context){
+	
+    }
+    
+    this.drawExplored = function(context){
+
+    }
+
+    this.drawGoal = function(context){
+	this.drawCircle(context, 'green');
+    }
+
+    this.drawActive = function(context){
+
+    }
+
+    this.drawCircle = function(context, color){
+	context.beginPath();
+        context.arc(this.x + (width * .5), this.y + (height * .5), this.radius, 0, 2*Math.PI, true);
+        context.fillStyle = color;
+        context.fill();
+        context.closePath();
+    }
+
+    /*
+      Draws the legs of a single node
+     */
+    this.drawLegs = function(context){
+
 	//draw top-to-bottom diagonal leg
 	context.beginPath();
 	console.log("hello world");
@@ -322,14 +365,12 @@ SIMGraphs.Graph.Node = function(x, y, width, height){
 	context.stroke();
 	context.closePath();
 
-	//draw a circle in the middle of the node
-	context.beginPath();
-	var radius = width > height ? height*.30 : width*.30;
-	context.arc(this.x + (width * .5), this.y + (height * .5), radius, 0, 2*Math.PI, true);
-	context.fillStyle = 'black';
-	context.fill();
-	context.closePath();
     }
+    
+    this.drawLeg = function(){
+	
+    }
+
 
     this.init(x, y);
 }
@@ -339,6 +380,14 @@ SIMGraphs.Graph.Node = function(x, y, width, height){
 SIMGraphs.Graph.DEPTH = 0;
 SIMGraphs.Graph.BREADTH = 1;
 SIMGraphs.Graph.ASTAR = 2;
+
+//for nodes
+SIMGraphs.Graph.Node.UNEXPLORED = 0;
+SIMGraphs.Graph.Node.OPEN = 1;
+SIMGraphs.Graph.Node.CLOSED = 2;
+SIMGraphs.Graph.Node.EXPLORED = 3;
+SIMGraphs.Graph.Node.GOAL = 4;
+SIMGraphs.Graph.Node.ACTIVE = 5;
 
 SIMGraphs.Graph.parseTypeString = function(string){
     string = string.toLowerCase();
