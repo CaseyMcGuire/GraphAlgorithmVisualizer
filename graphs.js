@@ -122,6 +122,7 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 	if(type === SIMGraphs.Graph.DEPTH){
 	    this.algoStep = this.depthFirstStep;
 	    this.name = "Depth First Search";
+	    this.stack = [];
 	}
 
 	else if(type === SIMGraphs.Graph.BREADTH){
@@ -157,17 +158,22 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 	//at some point, probably want to add colors and dimensions and such
 	this.nodes = [];
 	for(var i = 0; i < numXNodes; i++){
-	   // console.log(i);
+
 	    this.nodes[i] = new Array();
 	    for(var j = 0; j < numYNodes; j++){
-		//console.log(j);
+
 
 		this.nodes[i][j] = new SIMGraphs.Graph.Node(i * this.xPixels, j * this.yPixels + this.y, this.xPixels, this.yPixels);		
 		assert(this.nodes[i][j] !== undefined, "We have a problem");
 	    }
 	}
-
-	this.nodes[0][0].isActive = true;//for testing purposes
+	
+	//for right now, lets make the beginning node in the bottom left corner and the goal node
+	//in the top right corner
+	var v = this.nodes[0][numYNodes - 1];//.isActive = true;//for testing purposes
+	var goal = this.nodes[numXNodes - 1][0];//.isGoal = true;
+	v.isActive = true;
+	goal.isGoal = true;
 //	console.log(this.nodes);
     }
 
@@ -256,6 +262,7 @@ SIMGraphs.Graph.Node = function(x, y, width, height){
 	this.width = width;
 	this.height = height;
 	this.isActive = false;//whether this is the current node
+	this.isGoal = false;
 	/*
 	console.log('========');
 	console.log("x");
@@ -274,9 +281,19 @@ SIMGraphs.Graph.Node = function(x, y, width, height){
     }
 
     this.draw = function(context){
+
+	//this is getting messy... probably wanna start doing some cleanup
+	if(this.isGoal === true){
+	    context.beginPath();
+            var radius = width > height ? height*.30 : width*.30;
+            context.arc(this.x + (width * .5), this.y + (height * .5), radius, 0, 2*Math.PI, true);
+            context.fillStyle = 'green';
+            context.fill();
+            context.closePath();
+	    return;
+	}
 	if(this.isActive === false) return;//this will be changed later
-	
-	//draw top-to-bottom leg
+	//draw top-to-bottom diagonal leg
 	context.beginPath();
 	console.log("hello world");
 	context.moveTo(this.x, this.y);
@@ -284,9 +301,34 @@ SIMGraphs.Graph.Node = function(x, y, width, height){
 	context.stroke();
 	context.closePath();
 	
-	//TODO: draw bottom-to-top leg
-	//TODO: draw top-to-bottom leg
-	
+	//draw bottom-to-top diagonal lef
+	context.beginPath();
+	context.moveTo(this.x, this.y + height);
+	context.lineTo(this.x + width, this.y);
+	context.stroke();
+	context.closePath();
+
+	//draw side-to-side leg
+	context.beginPath();
+	context.moveTo(this.x, this.y + (height * .5));
+	context.lineTo(this.x + width, this.y + (height * .5));
+	context.stroke();
+	context.closePath();
+
+	//draw top-to-bottom leg
+	context.beginPath();
+	context.moveTo(this.x + (width * .5), this.y);
+	context.lineTo(this.x + (width * .5), this.y + this.height);
+	context.stroke();
+	context.closePath();
+
+	//draw a circle in the middle of the node
+	context.beginPath();
+	var radius = width > height ? height*.30 : width*.30;
+	context.arc(this.x + (width * .5), this.y + (height * .5), radius, 0, 2*Math.PI, true);
+	context.fillStyle = 'black';
+	context.fill();
+	context.closePath();
     }
 
     this.init(x, y);
