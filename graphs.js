@@ -47,10 +47,10 @@ SIMGraphs.GraphCanvas = function(canvas){
 	}
 	var graphs = new Array(types.length);
 	
+	//each graph should have about a third of the canvas minus the space for 
+	//control panel at the bottom
 	var spacePerGraph = (this.canvas.height-this.controlsHeight)/graphs.length;
-	console.log(this.canvas.height);
-	console.log(this.controlsHeight);
-	console.log(spacePerGraph);
+	
 
 	for(var i = 0; i < types.length; i++){
 	    //have each graph take up the entire third of the canvas
@@ -146,6 +146,7 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 	                               //and the counter
 	this.height = height - this.panelHeight;
 	this.width = width;
+	this.counter = 0;
 	
 	//get the dimensions for each node on the canvas
 	this.xPixels = this.width / numXNodes;
@@ -157,14 +158,16 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 	this.nodes = [];
 	for(var i = 0; i < numXNodes; i++){
 	   // console.log(i);
+	    this.nodes[i] = new Array();
 	    for(var j = 0; j < numYNodes; j++){
 		//console.log(j);
-		this.nodes[i] = new Array();
-		this.nodes[i][j] = new SIMGraphs.Graph.Node(i * this.xPixels, j * this.yPixels + this.y);
-		
+
+		this.nodes[i][j] = new SIMGraphs.Graph.Node(i * this.xPixels, j * this.yPixels + this.y, this.xPixels, this.yPixels);		
 		assert(this.nodes[i][j] !== undefined, "We have a problem");
 	    }
 	}
+
+	this.nodes[0][0].isActive = true;//for testing purposes
 //	console.log(this.nodes);
     }
 
@@ -185,11 +188,12 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 	context.save();
 	for(var i = 0;i< this.nodes.length; i++){
 	    for(var j = 0; j < this.nodes[i].length; j++){
-		//		this.nodes[i][j].draw(context);
+		this.nodes[i][j].draw(context);
 	    }
 	}
 	context.restore();
 
+	context.lineWidth = 0.1;
 	//draw bars down the y-axis
 	for(var i = 0; i < this.nodes.length; i++){
 	    context.beginPath();
@@ -210,7 +214,11 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 	    context.stroke();
 	}
 
-	
+	//TODO: draw panel here
+	context.fillStyle = "black";
+	var middleOfPanel = this.height + (this.panelHeight * 0.5) + this.y;
+	context.fillText(this.name, 0, middleOfPanel );
+	context.fillText(this.counter, this.width * 0.95, middleOfPanel);
 	
     }
 
@@ -230,19 +238,24 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 
 }
 
+//perhaps want to add i and j as well?
 /*
   A single node in the graph
 
   @param {Number} x The top-left hand x-coordinate of this node (in terms of the entire canvas)
   @param {Number} y The top-left hand y-coordinate of this ndoe (in terms of the entire canvas)
+  @param {Number} width The width of this node in pixels.
+  @param {Number} height The height of this node in pixels.
 */
-SIMGraphs.Graph.Node = function(x, y){
+SIMGraphs.Graph.Node = function(x, y, width, height){
 
     this.init = function(x, y){
 	
 	this.x = x;
 	this.y = y;
-
+	this.width = width;
+	this.height = height;
+	this.isActive = false;//whether this is the current node
 	/*
 	console.log('========');
 	console.log("x");
@@ -252,6 +265,7 @@ SIMGraphs.Graph.Node = function(x, y){
 	console.log('========');
 	*/
 	//some other constants I think this might need at some point
+	
 	//this.isWall = false;
 	//this.isOnOpenSet = false;
 	//this.isOnClosedSet = false;
@@ -260,7 +274,19 @@ SIMGraphs.Graph.Node = function(x, y){
     }
 
     this.draw = function(context){
-	console.log("bananas!");
+	if(this.isActive === false) return;//this will be changed later
+	
+	//draw top-to-bottom leg
+	context.beginPath();
+	console.log("hello world");
+	context.moveTo(this.x, this.y);
+	context.lineTo(this.x + width, this.y + height);
+	context.stroke();
+	context.closePath();
+	
+	//TODO: draw bottom-to-top leg
+	//TODO: draw top-to-bottom leg
+	
     }
 
     this.init(x, y);
