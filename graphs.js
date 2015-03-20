@@ -51,6 +51,7 @@ SIMGraphs.GraphCanvas = function(canvas){
 	for(var i = 0; i < types.length; i++){
 	    //have each graph take up the entire third of the canvas
 	    //right now, there is no space for buttons but that will be fixed
+	    //There should be a single row of buttons on the bottom
 	    graphs[i] = new SIMGraphs.Graph(types[i], 0, i*spacePerGraph, spacePerGraph, canvas.width, nodeDimensions[0], nodeDimensions[1]);
 	}
 	return graphs;
@@ -140,8 +141,10 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 	this.height = height;
 	this.width = width;
 	
-//	console.log(numXNodes);
-//	console.log(numYNodes);
+	//get the dimensions for each node on the canvas
+	var xPixels = this.width / numXNodes;
+	var yPixels = this.height / numYNodes;
+
 
 	//create our nodes
 	//at some point, probably want to add colors and dimensions and such
@@ -151,8 +154,8 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 	    for(var j = 0; j < numYNodes; j++){
 		//console.log(j);
 		this.nodes[i] = new Array();
-		this.nodes[i][j] = new SIMGraphs.Graph.Node();
-		//console.log(this.nodes[i][j]);
+		this.nodes[i][j] = new SIMGraphs.Graph.Node(i * xPixels, j * yPixels + this.y);
+		
 		assert(this.nodes[i][j] !== undefined, "We have a problem");
 	    }
 	}
@@ -177,17 +180,20 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 	
 	context.closePath();
 	context.stroke();	
-	
-	for(var i = this.nodes.length; i++){
-	    for(var j = 0; j < this.nodes[j].length; j++){
-//		this.nodes[i][j].draw(context);
+	//console.log("hellol");
+	for(var i = 0;i< this.nodes.length; i++){
+	    for(var j = 0; j < this.nodes[i].length; j++){
+		//		this.nodes[i][j].draw(context);
 	    }
 	}
 
 	//draw x axis
-	for(var i = 0; i < this.nodes.length; i++){
 
+	for(var i = 0; i < this.nodes.length; i++){
+	    context.beginPath();
+	    context.closePath();
 	}
+
 
 	//draw y axis
 	//the inner array should all be the same length so using the zero-index should be fine.
@@ -215,17 +221,39 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 
 }
 
-SIMGraphs.Graph.Node = function(){
+/*
+  A single node in the graph
 
-    this.init = function(){
-//	console.log("New node created");
-    }
+  @param {Number} x The top-left hand x-coordinate of this node (in terms of the entire canvas)
+  @param {Number} y The top-left hand y-coordinate of this ndoe (in terms of the entire canvas)
+*/
+SIMGraphs.Graph.Node = function(x, y){
 
-    this.draw(context){
+    this.init = function(x, y){
+	
+	this.x = x;
+	this.y = y;
+
+	console.log('========');
+	console.log("x");
+	console.log(x);
+	console.log("y");
+	console.log(y);
+	console.log('========');
+
+	//some other constants I think this might need at some point
+	//this.isWall = false;
+	//this.isOnOpenSet = false;
+	//this.isOnClosedSet = false;
+	//this.color = "#000";//fine for right now
 	
     }
 
-    this.init();
+    this.draw = function(context){
+	console.log("bananas!");
+    }
+
+    this.init(x, y);
 }
 
 //some constants to help clear up code
@@ -253,6 +281,7 @@ function assert(condition, message){
 	throw message;
     }
 }
+
 
 //when the window loads, start your engines.
 window.addEventListener('load', SIMGraphs.go, false);
