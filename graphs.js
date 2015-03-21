@@ -27,10 +27,12 @@ SIMGraphs.GraphCanvas = function(canvas){
        	                          //big the canvas is
 	this.graphs = this.makeGraphs();
 	this.isPlaying = false;
+	this.draw();
 
 
 	//draw the board
-	this.draw();
+	this.isPlaying = true;//remove this
+	setInterval(this.draw.bind(this), 1000);
     }
     
     this.makeGraphs = function(){
@@ -84,6 +86,7 @@ SIMGraphs.GraphCanvas = function(canvas){
 
     
     this.draw = function(){
+	this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
 	if(this.isPlaying) this.stepGraphs();
 	for(var i = 0; i < this.graphs.length; i++){
 	    this.graphs[i].draw(this.context);
@@ -96,6 +99,7 @@ SIMGraphs.GraphCanvas = function(canvas){
     this.stepGraphs = function(){
 	for(var i = 0; i < this.graphs.length; i++){
 	    this.graphs[i].algoStep();
+	    console.log("In step Graphs");
 	}
     }
 
@@ -168,20 +172,24 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 	    for(var j = 0; j < numYNodes; j++){
 
 
-		this.nodes[i][j] = new SIMGraphs.Graph.Node(i * this.xPixels, j * this.yPixels + this.y, this.xPixels, this.yPixels);		
+		this.nodes[i][j] = new SIMGraphs.Graph.Node(i * this.xPixels, j * this.yPixels + this.y, this.xPixels, this.yPixels, i, j);		
 		assert(this.nodes[i][j] !== undefined, "One of our nodes is undefined");
 	    }
 	}
 	
 	//for right now, lets make the beginning node in the bottom left corner and the goal node
 	//in the top right corner
-	var v = this.nodes[0][numYNodes - 1];//beginning active node
-	var goal = this.nodes[numXNodes - 1][0];//goal node
-	v.type = SIMGraphs.Graph.Node.ACTIVE;
-	goal.type = SIMGraphs.Graph.Node.GOAL;
-	assert(v.type !== undefined);
-	assert(goal.type !== undefined);
+	this.curNode = this.nodes[0][numYNodes - 1];//beginning active node
+	this.goal = this.nodes[numXNodes - 1][0];//goal node
+	this.curNode.type = SIMGraphs.Graph.Node.ACTIVE;
+	this.goal.type = SIMGraphs.Graph.Node.GOAL;
+	if(type === SIMGraphs.Graph.DEPTH){
+	    this.stack.push(this.curNode);
+	}
+	assert(this.curNode.type !== undefined);
+	assert(this.goal.type !== undefined);
 //	console.log(this.nodes);
+	this.getNeighborNodes(this.curNode);
     }
 
     this.draw = function(context){
@@ -226,11 +234,40 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 	var middleOfPanel = this.height + (this.panelHeight * 0.5) + this.y;
 	context.fillText(this.name, 0, middleOfPanel );
 	context.fillText(this.counter, this.width * 0.95, middleOfPanel);
-	
+
     }
 
     this.depthFirstStep = function(){
-
+	console.log("the stack's current length is " + this.stack.length);
+	if(this.stack.length === 0) return;
+	this.curNode.type = SIMGraphs.Graph.Node.CLOSED;
+	console.log("The old current node had coordinates: ");
+	console.log(this.curNode.i);
+	console.log(this.curNode.j);
+	this.curNode = this.stack.pop();
+	console.log("The new current node has coordinates: ");
+	console.log(this.curNode.i);
+	console.log(this.curNode.j);
+	console.log("--------");
+	this.curNode = SIMGraphs.Graph.Node.ACTIVE;
+	console.log("we're calling this.getNeighborNodes");
+	var arr = this.getNeighborNodes(this.curNode);
+	console.log("We're leaving this.getNeighborNodes");
+	
+	console.log("ARRAYS LENGTH IS");
+	console.log(arr.length);
+	
+	for(var i = 0; i < arr.length; i++){
+	    console.log("OUR ARRAY BEGINS");
+	    console.log(arr[i]);
+	    console.log("OUR ARRAY ENDS");
+	    if(arr[i].type === SIMGraphs.Graph.Node.UNEXPLORED){
+		arr[i].type = SIMGraphs.Graph.Node.OPEN;
+		this.stack.push(arr[i]);
+	    }
+	}
+	
+	
     }
 
     this.breadthFirstStep = function(){
@@ -239,6 +276,36 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 
     this.aStarStep = function(){
 
+    }
+
+    /*
+      Returns the neighbor nodes for the current node.
+     */
+    this.getNeighborNodes = function(node){
+	var arr = [];
+	var curNode;
+	var startX = node.i - 1;
+	var startY = node.j - 1;
+//	console.log(startX);
+//	console.log(startY);
+	for(var m = 0; m < 3; m++){
+	    for(var n = 0; n < 3; n++){
+		if(n === 1 && m === 1) continue;
+		if(startX + m < this.nodes.length && startX + m >= 0 && startY + n < this.nodes[0].length && startY + n >= 0){
+
+		   // console.log(startX + m);
+		   // console.log(startY + n);
+		    arr.push(this.nodes[startX + m][startY + n]);
+		    //console.log("above");
+		   // console.log(arr[arr.length - 1].i);
+		   // console.log(arr[arr.length - 1].j);
+		   // console.log("Pushing onto the array");
+		}
+	    }
+	}
+	console.log("END OF METHOD");
+	console.log(arr.length);
+	return arr;
     }
 
     this.init(type, x, y, height, width);
@@ -256,12 +323,15 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
   @param {Number} width The width of this node in pixels.
   @param {Number} height The height of this node in pixels.
 */
-SIMGraphs.Graph.Node = function(x, y, width, height){
+SIMGraphs.Graph.Node = function(x, y, width, height, i, j){
 
     this.init = function(x, y){
 	
 	this.x = x;
 	this.y = y;
+	this.i = i;
+	this.j = j;
+//	console.log("This node's coordinates in the matrix are: (" + this.i + ", " + this.j + ")");
 	this.width = width;
 	this.height = height;
 	this.type = SIMGraphs.Graph.Node.UNEXPLORED;
@@ -301,6 +371,7 @@ SIMGraphs.Graph.Node = function(x, y, width, height){
     }
 
     this.drawOpen = function(context){
+	console.log("We're in drawOpen");
 	this.drawLegs(context);
 	this.drawCircle(context, 'white');
     }
@@ -408,5 +479,3 @@ function assert(condition, message){
 
 //when the window loads, start your engines.
 window.addEventListener('load', SIMGraphs.go, false);
-
-
