@@ -199,8 +199,9 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 	    this.queue.push(this.curNode);
 	}
 	if(this.type === SIMGraphs.Graph.ASTAR){
-	    gScore[this.curNode] = 0;
-	    fScore[this.curNode] = gScore[this.curNode] + this.heuristicCostEstimate(this.curNode, this.goal);
+	    this.openSet.push(this.curNode);
+	    this.gScore[this.curNode] = 0;
+	    this.fScore[this.curNode] = this.gScore[this.curNode] + this.heuristicCostEstimate(this.curNode, this.goal);
 	}
 	assert(this.curNode.type !== undefined);
 	assert(this.goal.type !== undefined);
@@ -253,8 +254,8 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
     }
 
     this.depthFirstStep = function(){
-	console.log("in depth first step");
-	console.log(this.stack.length);
+//	console.log("in depth first step");
+//	console.log(this.stack.length);
 	if(this.stack.length === 0) return;
 	this.curNode.type = SIMGraphs.Graph.Node.CLOSED;
 	this.curNode = this.stack.pop();
@@ -277,8 +278,10 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
     this.breadthFirstStep = function(){
 
 	if(this.queue.length === 0) return;
+
 	this.curNode.type = SIMGraphs.Graph.Node.CLOSED;
 	this.curNode = this.queue.shift();
+
 	if(this.curNode.type === SIMGraphs.Graph.Node.GOAL) this.queue = [];
 	this.curNode.type = SIMGraphs.Graph.Node.ACTIVE;
 
@@ -297,7 +300,41 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
     }
 
     this.aStarStep = function(){
+	console.log("We're in aStarStep");
+	console.log(this.openSet.length);
+	if(this.openSet.length === 0) return;
+	this.curNode.type = SIMGraphs.Graph.Node.CLOSED;
+	this.curNode = this.getNodeWithLowestScore();
 	
+	if(this.curNode.type === SIMGraphs.Graph.Node.GOAL) this.openSet = [];
+	this.curNode.type = SIMGraphs.Graph.Node.ACTIVE;
+	
+	delete this.openSet[this.curNode];
+	
+	var arr = this.getNeighborNodes(this.curNode);
+	
+	for(var i = 0; i < arr.length; i++){
+	    if(arr[i].type === SIMGraphs.Graph.Node.CLOSED) continue;
+	    var tentativeGScore = this.gScore[this.curNode] + this.distanceBetween(this.curNode, arr[i]);
+
+	    if(arr[i].type !== SIMGraphs.Graph.Node.OPEN || tentativeGScore < gScore[arr[i]]){
+		this.gScore[arr[i]] = tentativeGScore;
+		this.fScore[arr[i]] = gScore[arr[i]] + this.heuristicCostEstimate(arr[i], this.goal);
+		if(arr[i].type !== SIMGraphs.Graph.Node.OPEN){
+		    arr[i].type == SIMGraphs.Graph.Node.OPEN;
+		}
+	    }
+	}
+	
+	
+    }
+
+    //this should be replaced with a priority queue but we'll do linear search for right now
+    this.getNodeWithLowestFScore = function(){
+	var king;
+	for(var key in this.fScore){
+	    if(king === undefined || this.fScore[key] < king) king = this.fScore[key];
+	}
     }
 
     //our heuristic will be euclidean distance
