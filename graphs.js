@@ -150,6 +150,7 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 	assert(this.algoStep !== undefined);
 //	console.log("Graph created");
 	
+
 	this.x = x;
 	this.y = y;
 	this.panelHeight = 50;//about 50 pixels should be reserved for the name and
@@ -188,8 +189,7 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 	}
 	assert(this.curNode.type !== undefined);
 	assert(this.goal.type !== undefined);
-//	console.log(this.nodes);
-	this.getNeighborNodes(this.curNode);
+
     }
 
     this.draw = function(context){
@@ -238,31 +238,22 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
     }
 
     this.depthFirstStep = function(){
-	console.log("the stack's current length is " + this.stack.length);
+
 	if(this.stack.length === 0) return;
 	this.curNode.type = SIMGraphs.Graph.Node.CLOSED;
-	console.log("The old current node had coordinates: ");
-	console.log(this.curNode.i);
-	console.log(this.curNode.j);
 	this.curNode = this.stack.pop();
-	console.log("The new current node has coordinates: ");
-	console.log(this.curNode.i);
-	console.log(this.curNode.j);
-	console.log("--------");
-	this.curNode = SIMGraphs.Graph.Node.ACTIVE;
-	console.log("we're calling this.getNeighborNodes");
+	if(this.curNode.type === SIMGraphs.Graph.Node.GOAL) this.stack = [];//a dirty hack but I still wanna ponder how to do this.
+	this.curNode.type = SIMGraphs.Graph.Node.ACTIVE;
+
 	var arr = this.getNeighborNodes(this.curNode);
-	console.log("We're leaving this.getNeighborNodes");
-	
-	console.log("ARRAYS LENGTH IS");
-	console.log(arr.length);
 	
 	for(var i = 0; i < arr.length; i++){
-	    console.log("OUR ARRAY BEGINS");
-	    console.log(arr[i]);
-	    console.log("OUR ARRAY ENDS");
 	    if(arr[i].type === SIMGraphs.Graph.Node.UNEXPLORED){
 		arr[i].type = SIMGraphs.Graph.Node.OPEN;
+		this.stack.push(arr[i]);
+	    }
+	    else if(arr[i].type === SIMGraphs.Graph.Node.GOAL){
+		console.log("arr[i] is a goal node");
 		this.stack.push(arr[i]);
 	    }
 	}
@@ -283,28 +274,20 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
      */
     this.getNeighborNodes = function(node){
 	var arr = [];
-	var curNode;
 	var startX = node.i - 1;
 	var startY = node.j - 1;
-//	console.log(startX);
-//	console.log(startY);
+
 	for(var m = 0; m < 3; m++){
 	    for(var n = 0; n < 3; n++){
 		if(n === 1 && m === 1) continue;
 		if(startX + m < this.nodes.length && startX + m >= 0 && startY + n < this.nodes[0].length && startY + n >= 0){
 
-		   // console.log(startX + m);
-		   // console.log(startY + n);
 		    arr.push(this.nodes[startX + m][startY + n]);
-		    //console.log("above");
-		   // console.log(arr[arr.length - 1].i);
-		   // console.log(arr[arr.length - 1].j);
-		   // console.log("Pushing onto the array");
+
 		}
 	    }
 	}
-	console.log("END OF METHOD");
-	console.log(arr.length);
+
 	return arr;
     }
 
@@ -371,7 +354,7 @@ SIMGraphs.Graph.Node = function(x, y, width, height, i, j){
     }
 
     this.drawOpen = function(context){
-	console.log("We're in drawOpen");
+
 	this.drawLegs(context);
 	this.drawCircle(context, 'white');
     }
