@@ -144,7 +144,10 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 	    this.type = SIMGraphs.Graph.ASTAR;
 	    this.algoStep = this.aStarStep;
 	    this.name = "A* Search";
-	   
+	    this.openSet = [];
+	    this.fScore = {};
+	    this.gScore = {};
+
 	}
 
 	else throw Error("no such type");
@@ -166,7 +169,7 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 	this.xPixels = this.width / numXNodes;
 	this.yPixels = this.height / numYNodes;
 
-	console.log("here we are");
+	
 	//create our nodes
 	//at some point, probably want to add colors and dimensions and such
 	this.nodes = [];
@@ -187,12 +190,17 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 	this.goal = this.nodes[numXNodes - 1][0];//goal node
 	this.curNode.type = SIMGraphs.Graph.Node.ACTIVE;
 	this.goal.type = SIMGraphs.Graph.Node.GOAL;
+
+	
 	if(this.type === SIMGraphs.Graph.DEPTH){
 	    this.stack.push(this.curNode);
-	    console.log(this.stack.length);
 	}
 	if(this.type === SIMGraphs.Graph.BREADTH){
 	    this.queue.push(this.curNode);
+	}
+	if(this.type === SIMGraphs.Graph.ASTAR){
+	    gScore[this.curNode] = 0;
+	    fScore[this.curNode] = gScore[this.curNode] + this.heuristicCostEstimate(this.curNode, this.goal);
 	}
 	assert(this.curNode.type !== undefined);
 	assert(this.goal.type !== undefined);
@@ -289,7 +297,21 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
     }
 
     this.aStarStep = function(){
+	
+    }
 
+    //our heuristic will be euclidean distance
+    this.heuristicCostEstimate = function(node1, node2){
+	var a = node2.i - node1.i;
+	var b = node2.j - node1.j;
+	var dist = Math.sqrt(a*a + b*b);
+	assert(dist !== Math.NaN);
+	return dist;
+    }
+
+    //right now, all nodes have the same distance so this is fine
+    this.distanceBetween = function(node1, node2){
+	return 1;
     }
 
     /*
