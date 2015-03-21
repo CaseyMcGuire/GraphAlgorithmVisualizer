@@ -123,9 +123,10 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
     
     //see above for parameter specifications
     this.init = function(type, x, y, height, width){
-
+	console.log("Iniializing our graphs");
 	//first, figure out which type of graph we're using
 	if(type === SIMGraphs.Graph.DEPTH){
+	    this.type = SIMGraphs.Graph.DEPTH;
 	    this.algoStep = this.depthFirstStep;
 	    this.name = "Depth First Search";
 	    this.stack = [];
@@ -133,12 +134,14 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 	}
 
 	else if(type === SIMGraphs.Graph.BREADTH){
+	    this.type = SIMGraphs.Graph.BREADTH;
 	    this.algoStep = this.breadthFirstStep;
 	    this.name = "Breadth First Search";
 	    this.queue = [];
 	}
 
 	else if(type === SIMGraphs.Graph.ASTAR){
+	    this.type = SIMGraphs.Graph.ASTAR;
 	    this.algoStep = this.aStarStep;
 	    this.name = "A* Search";
 	   
@@ -163,7 +166,7 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 	this.xPixels = this.width / numXNodes;
 	this.yPixels = this.height / numYNodes;
 
-
+	console.log("here we are");
 	//create our nodes
 	//at some point, probably want to add colors and dimensions and such
 	this.nodes = [];
@@ -184,8 +187,12 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 	this.goal = this.nodes[numXNodes - 1][0];//goal node
 	this.curNode.type = SIMGraphs.Graph.Node.ACTIVE;
 	this.goal.type = SIMGraphs.Graph.Node.GOAL;
-	if(type === SIMGraphs.Graph.DEPTH){
+	if(this.type === SIMGraphs.Graph.DEPTH){
 	    this.stack.push(this.curNode);
+	    console.log(this.stack.length);
+	}
+	if(this.type === SIMGraphs.Graph.BREADTH){
+	    this.queue.push(this.curNode);
 	}
 	assert(this.curNode.type !== undefined);
 	assert(this.goal.type !== undefined);
@@ -207,7 +214,7 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 	    }
 	}
 	context.restore();
-
+	
 	context.lineWidth = 0.1;
 	//draw bars down the y-axis
 	for(var i = 0; i < this.nodes.length; i++){
@@ -238,7 +245,8 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
     }
 
     this.depthFirstStep = function(){
-
+	console.log("in depth first step");
+	console.log(this.stack.length);
 	if(this.stack.length === 0) return;
 	this.curNode.type = SIMGraphs.Graph.Node.CLOSED;
 	this.curNode = this.stack.pop();
@@ -253,15 +261,30 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 		this.stack.push(arr[i]);
 	    }
 	    else if(arr[i].type === SIMGraphs.Graph.Node.GOAL){
-		console.log("arr[i] is a goal node");
 		this.stack.push(arr[i]);
 	    }
 	}
-	
-	
     }
 
     this.breadthFirstStep = function(){
+
+	if(this.queue.length === 0) return;
+	this.curNode.type = SIMGraphs.Graph.Node.CLOSED;
+	this.curNode = this.queue.shift();
+	if(this.curNode.type === SIMGraphs.Graph.Node.GOAL) this.queue = [];
+	this.curNode.type = SIMGraphs.Graph.Node.ACTIVE;
+
+	var arr = this.getNeighborNodes(this.curNode);
+	
+	for(var i = 0; i < arr.length; i++){
+	    if(arr[i].type === SIMGraphs.Graph.Node.UNEXPLORED){
+		arr[i].type = SIMGraphs.Graph.Node.OPEN;
+		this.queue.push(arr[i]);
+	    }
+	    else if(arr[i].type === SIMGraphs.Graph.Node.GOAL){
+		this.queue.push(arr[i]);
+	    }
+	}
 
     }
 
