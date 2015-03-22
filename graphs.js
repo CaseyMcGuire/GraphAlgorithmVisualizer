@@ -13,7 +13,7 @@ SIMGraphs.go = function() {
 
 ////////////////////////////////////////////////////////////
 //CANVAS OBJECT
-///////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
 
 SIMGraphs.GraphCanvas = function(canvas){
 
@@ -145,12 +145,11 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 	    this.algoStep = this.aStarStep;
 	    this.name = "A* Search";
 	    this.openSet = [];
-	    this.fScore = {};
-	    this.gScore = {};
-
 	}
 
 	else throw Error("no such type");
+
+
 
 	assert(this.name !== undefined);
 	assert(this.algoStep !== undefined);
@@ -169,7 +168,7 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 	this.xPixels = this.width / numXNodes;
 	this.yPixels = this.height / numYNodes;
 
-	
+	console.log("Hello");
 	//create our nodes
 	//at some point, probably want to add colors and dimensions and such
 	this.nodes = [];
@@ -187,11 +186,11 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 	//for right now, lets make the beginning node in the bottom left corner and the goal node
 	//in the top right corner
 	this.curNode = this.nodes[0][numYNodes - 1];//beginning active node
-	this.goal = this.nodes[numXNodes - 1][0];//goal node
+	this.goal = this.nodes[numXNodes - 5][0];//goal node
 	this.curNode.type = SIMGraphs.Graph.Node.ACTIVE;
 	this.goal.type = SIMGraphs.Graph.Node.GOAL;
 
-	
+
 	if(this.type === SIMGraphs.Graph.DEPTH){
 	    this.stack.push(this.curNode);
 	}
@@ -200,11 +199,15 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 	}
 	if(this.type === SIMGraphs.Graph.ASTAR){
 	    this.openSet.push(this.curNode);
-	    this.gScore[this.curNode] = 0;
-	    this.fScore[this.curNode] = this.gScore[this.curNode] + this.heuristicCostEstimate(this.curNode, this.goal);
+	    console.log("we're in init");
+	    console.log(this.openSet.length);
+	    this.curNode.gScore = 0;//	    this.gScore[this.curNode] = 0;
+	    this.curNode.fScore = this.curNode.gScore + this.heuristicCostEstimate(this.curNode, this.goal);//	    this.fScore[this.curNode] = this.gScore[this.curNode] + this.heuristicCostEstimate(this.curNode, this.goal);
+	    assert(this.curNode.fScore !== undefined, "this.curNode.fScore is undefined");
+	    assert(this.curNode.gScore !== undefined, "this.curNode.gScore is undefined");
 	}
-	assert(this.curNode.type !== undefined);
-	assert(this.goal.type !== undefined);
+	assert(this.curNode.type !== undefined, "curNode is undefined");
+	assert(this.goal.type !== undefined, "this.goal is undefined");
 
     }
 
@@ -253,6 +256,10 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 
     }
 
+
+    /////////////////////////////////////////////////////////////////////
+    //DEPTH-FIRST SEARCH
+    ////////////////////////////////////////////////////////////////////
     this.depthFirstStep = function(){
 //	console.log("in depth first step");
 //	console.log(this.stack.length);
@@ -274,6 +281,10 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 	    }
 	}
     }
+
+    ///////////////////////////////////////////////////////////////////////
+    //BREADTH-FIRST SEARCH
+    //////////////////////////////////////////////////////////////////////
 
     this.breadthFirstStep = function(){
 
@@ -299,44 +310,61 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 
     }
 
+    ///////////////////////////////////////////////////////////////////////
+    //A* SEARCH
+    //////////////////////////////////////////////////////////////////////
+
     this.aStarStep = function(){
+
 	console.log("We're in aStarStep");
 	console.log(this.openSet.length);
 	if(this.openSet.length === 0) return;
+	console.log("Type of curNode is ");
+//	console.log(typeof this.curNode);
+	console.log(this.curNode);
+
 	this.curNode.type = SIMGraphs.Graph.Node.CLOSED;
-	this.curNode = this.getNodeWithLowestScore();
-	
+	this.curNode = this.getNodeWithLowestFScore();
+	//	assert(typeof this.curNode !== 'string');
+
 	if(this.curNode.type === SIMGraphs.Graph.Node.GOAL) this.openSet = [];
 	this.curNode.type = SIMGraphs.Graph.Node.ACTIVE;
-	
-	delete this.openSet[this.curNode];
 	
 	var arr = this.getNeighborNodes(this.curNode);
 	
 	for(var i = 0; i < arr.length; i++){
 	    if(arr[i].type === SIMGraphs.Graph.Node.CLOSED) continue;
-	    var tentativeGScore = this.gScore[this.curNode] + this.distanceBetween(this.curNode, arr[i]);
-
-	    if(arr[i].type !== SIMGraphs.Graph.Node.OPEN || tentativeGScore < gScore[arr[i]]){
-		this.gScore[arr[i]] = tentativeGScore;
-		this.fScore[arr[i]] = gScore[arr[i]] + this.heuristicCostEstimate(arr[i], this.goal);
-		if(arr[i].type !== SIMGraphs.Graph.Node.OPEN){
-		    arr[i].type == SIMGraphs.Graph.Node.OPEN;
+	    var tentativeGScore = this.curNode.gScore + this.distanceBetween(this.curNode, arr[i]);// this.gScore[this.curNode] + this.distanceBetween(this.curNode, arr[i]);
+//	    assert(typeof this.curNode !== 'string');
+	    if(arr[i].type !== SIMGraphs.Graph.Node.OPEN || tentativeGScore < arr[i].gScore){
+		arr[i].gScore = tentativeGScore;//this.gScore[arr[i]] = tentativeGScore;
+		arr[i].fScore = arr[i].gScore + this.heuristicCostEstimate(arr[i], this.goal);//		this.fScore[arr[i]] = gScore[arr[i]] + this.heuristicCostEstimate(arr[i], this.goal);
+		if(arr[i].type === SIMGraphs.Graph.Node.GOAL){
+		    this.openSet.push(arr[i]);
+		}
+		else if(arr[i].type !== SIMGraphs.Graph.Node.OPEN){
+		    arr[i].type = SIMGraphs.Graph.Node.OPEN;
+		    this.openSet.push(arr[i]);
 		}
 	    }
 	}
-	
-	
+
     }
 
     //this should be replaced with a priority queue but we'll do linear search for right now
     this.getNodeWithLowestFScore = function(){
 	var king;
-	for(var key in this.fScore){
-	    if(king === undefined || this.fScore[key] < king) king = this.fScore[key];
+	var indexToRemove;
+	for(var i = 0; i < this.openSet.length; i++){
+	    if(king === undefined || this.openSet[i].fScore < king.fScore){
+		king = this.openSet[i];
+		indexToRemove = i;
+	    }
 	}
+	this.openSet.splice(indexToRemove, indexToRemove + 1);
+	return king;
     }
-
+    
     //our heuristic will be euclidean distance
     this.heuristicCostEstimate = function(node1, node2){
 	var a = node2.i - node1.i;
