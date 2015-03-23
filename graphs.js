@@ -335,7 +335,7 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 	for(var i = 0; i < arr.length; i++){
 	    if(arr[i].type === SIMGraphs.Graph.Node.CLOSED) continue;
 	    var tentativeGScore = this.curNode.gScore + this.distanceBetween(this.curNode, arr[i]);// this.gScore[this.curNode] + this.distanceBetween(this.curNode, arr[i]);
-//	    assert(typeof this.curNode !== 'string');
+	    //	    assert(typeof this.curNode !== 'string');
 	    if(arr[i].type !== SIMGraphs.Graph.Node.OPEN || tentativeGScore < arr[i].gScore){
 		arr[i].gScore = tentativeGScore;//this.gScore[arr[i]] = tentativeGScore;
 		arr[i].fScore = arr[i].gScore + this.heuristicCostEstimate(arr[i], this.goal);//		this.fScore[arr[i]] = gScore[arr[i]] + this.heuristicCostEstimate(arr[i], this.goal);
@@ -415,6 +415,8 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
   @param {Number} y The top-left hand y-coordinate of this ndoe (in terms of the entire canvas)
   @param {Number} width The width of this node in pixels.
   @param {Number} height The height of this node in pixels.
+  @param {Number} i The x-value of the node in the graph matrix
+  @param {Number} j The y-value of the node in the graph matrix
 */
 SIMGraphs.Graph.Node = function(x, y, width, height, i, j){
 
