@@ -120,17 +120,15 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes, colo
     //see above for parameter specifications
     this.init = function(type, x, y, height, width){
 	console.log("Initializing our graphs");
-	console.log(x);
-	console.log(y);
-	console.log(height);
-	console.log(width);
+
+
 	//first, figure out which type of graph we're using
 	if(type === SIMGraphs.Graph.DEPTH){
 	    this.type = SIMGraphs.Graph.DEPTH;
 	    this.algoStep = this.depthFirstStep;
 	    this.name = "Depth First Search";
 	    this.stack = [];
-
+	    if(color === undefined) color = "red";
 	}
 
 	else if(type === SIMGraphs.Graph.BREADTH){
@@ -138,6 +136,7 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes, colo
 	    this.algoStep = this.breadthFirstStep;
 	    this.name = "Breadth First Search";
 	    this.queue = [];
+	    if(color === undefined) color = "blue";
 	}
 
 	else if(type === SIMGraphs.Graph.ASTAR){
@@ -145,16 +144,12 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes, colo
 	    this.algoStep = this.aStarStep;
 	    this.name = "A* Search";
 	    this.openSet = [];
+	    if(color === undefined) color = "green";
 	}
-
 	else throw Error("no such type");
-
-
 
 	assert(this.name !== undefined);
 	assert(this.algoStep !== undefined);
-//	console.log("Graph created");
-	
 
 	this.x = x;
 	this.y = y;
@@ -164,6 +159,7 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes, colo
 	this.height = height - this.panelHeight;
 	this.width = width - this.spaceBetweenGraphs;
 	this.counter = 0;
+	this.colors = SIMGraphs.makeColors(color);
 	
 	//get the dimensions for each node on the canvas
 	this.xPixels = this.width / numXNodes;
@@ -177,7 +173,7 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes, colo
 	    this.nodes[i] = new Array();
 	    for(var j = 0; j < numYNodes; j++){
 
-		this.nodes[i][j] = new SIMGraphs.Graph.Node(i * this.xPixels + this.x, j * this.yPixels, this.xPixels, this.yPixels, i, j);		
+		this.nodes[i][j] = new SIMGraphs.Graph.Node(i * this.xPixels + this.x, j * this.yPixels, this.xPixels, this.yPixels, i, j, this.colors);		
 		assert(this.nodes[i][j] !== undefined, "One of our nodes is undefined");
 	    }
 	}
@@ -188,7 +184,6 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes, colo
 	this.goal = this.nodes[numXNodes - 5][0];//goal node
 	this.curNode.type = SIMGraphs.Graph.Node.ACTIVE;
 	this.goal.type = SIMGraphs.Graph.Node.GOAL;
-
 
 	if(this.type === SIMGraphs.Graph.DEPTH){
 	    this.stack.push(this.curNode);
@@ -392,7 +387,7 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes, colo
 
 	for(var m = 0; m < 3; m++){
 	    for(var n = 0; n < 3; n++){
-		if(n === 1 && m === 1) continue;
+		if(n === 1 && m === 1) continue;//1x1 is the current node we're getting neighbors for
 		if(startX + m < this.nodes.length && startX + m >= 0 && startY + n < this.nodes[0].length && startY + n >= 0){
 
 		    arr.push(this.nodes[startX + m][startY + n]);
@@ -408,9 +403,6 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes, colo
 
 }
 
-
-
-//perhaps want to add i and j as well?
 /*
   A single node in the graph
 
@@ -420,8 +412,9 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes, colo
   @param {Number} height The height of this node in pixels.
   @param {Number} i The x-value of the node in the graph matrix
   @param {Number} j The y-value of the node in the graph matrix
+  @param {Array} colors An array of length holding various hues of the graph's color(0 is darkest, 5 is lightest)
 */
-SIMGraphs.Graph.Node = function(x, y, width, height, i, j){
+SIMGraphs.Graph.Node = function(x, y, width, height, i, j, colors){
 
     this.init = function(x, y){
 	
@@ -429,7 +422,10 @@ SIMGraphs.Graph.Node = function(x, y, width, height, i, j){
 	this.y = y;
 	this.i = i;
 	this.j = j;
+	this.offset = 0;//the offset to use for colors when we're done
 
+	//note: this array is shared by all nodes in a graph. As such, DO NOT MODIFY IT
+	this.colors = colors;
 	this.width = width;
 	this.height = height;
 	this.type = SIMGraphs.Graph.Node.UNEXPLORED;
@@ -476,7 +472,7 @@ SIMGraphs.Graph.Node = function(x, y, width, height, i, j){
     
     this.drawClosed = function(context){
 	this.drawLegs(context);
-	this.drawCircle(context, '#ddd');//dark gray ?
+	this.drawCircle(context, colors[5]);
     }
 
     this.drawGoal = function(context){
@@ -485,7 +481,7 @@ SIMGraphs.Graph.Node = function(x, y, width, height, i, j){
 
     this.drawActive = function(context){
 	this.drawLegs(context);
-	this.drawCircle(context, '#3a3a3a');
+	this.drawCircle(context, colors[2]);
     }
 
 
