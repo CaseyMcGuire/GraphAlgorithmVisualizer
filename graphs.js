@@ -16,8 +16,6 @@ SIMGraphs.go = function() {
 ////////////////////////////////////////////////////////////
 
 SIMGraphs.GraphCanvas = function(canvas){
-
-    
     
     this.init = function(canvas){
 	this.canvas = canvas;
@@ -32,7 +30,7 @@ SIMGraphs.GraphCanvas = function(canvas){
 
 	//draw the board
 	this.isPlaying = true;//remove this
-	setInterval(this.draw.bind(this), 1000);
+	setInterval(this.draw.bind(this), 500);
     }
     
     this.makeGraphs = function(){
@@ -43,22 +41,19 @@ SIMGraphs.GraphCanvas = function(canvas){
 	}
 	
 	//find out how many nodes along the x and y axes
-	var nodeDimensions = this.getPropertyArray("nodes");
+	var nodeDimensions = this.getPropertyArray("map-size");
 	for(var i = 0; i < nodeDimensions.length; i++){
 	    nodeDimensions[i] = parseInt(nodeDimensions[i],10);
 	}
 	var graphs = new Array(types.length);
 	
-	//each graph should have about a third of the canvas minus the space for 
-	//control panel at the bottom
-	var spacePerGraph = (this.canvas.height-this.controlsHeight)/graphs.length;
-	
+	var widthPerGraph = (this.canvas.width)/graphs.length;
 
 	for(var i = 0; i < types.length; i++){
 	    //have each graph take up the entire third of the canvas
 	    //right now, there is no space for buttons but that will be fixed
 	    //There should be a single row of buttons on the bottom
-	    graphs[i] = new SIMGraphs.Graph(types[i], 0, i*spacePerGraph, spacePerGraph, canvas.width, nodeDimensions[0], nodeDimensions[1]);
+	    graphs[i] = new SIMGraphs.Graph(types[i], i*widthPerGraph, 0, canvas.height, widthPerGraph, nodeDimensions[0], nodeDimensions[1]);
 	}
 	return graphs;
     }
@@ -117,13 +112,18 @@ SIMGraphs.GraphCanvas = function(canvas){
   @param {Number} width The width of the graph in pixels(?)
   @param {Number} numXNodes The number of nodes along the X axis
   @param {Number} numYNodes The number of nodes along the Y axis
+  @param {String} color The color of this graph's nodes
 
 */
-SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
+SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes, color){
     
     //see above for parameter specifications
     this.init = function(type, x, y, height, width){
-	console.log("Iniializing our graphs");
+	console.log("Initializing our graphs");
+	console.log(x);
+	console.log(y);
+	console.log(height);
+	console.log(width);
 	//first, figure out which type of graph we're using
 	if(type === SIMGraphs.Graph.DEPTH){
 	    this.type = SIMGraphs.Graph.DEPTH;
@@ -159,16 +159,16 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 	this.x = x;
 	this.y = y;
 	this.panelHeight = 50;//about 50 pixels should be reserved for the name and
-	                               //and the counter
+	                      //and the counter
+	this.spaceBetweenGraphs = 10;//put about 10 pixels between graphs
 	this.height = height - this.panelHeight;
-	this.width = width;
+	this.width = width - this.spaceBetweenGraphs;
 	this.counter = 0;
 	
 	//get the dimensions for each node on the canvas
 	this.xPixels = this.width / numXNodes;
 	this.yPixels = this.height / numYNodes;
 
-	console.log("Hello");
 	//create our nodes
 	//at some point, probably want to add colors and dimensions and such
 	this.nodes = [];
@@ -177,8 +177,7 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 	    this.nodes[i] = new Array();
 	    for(var j = 0; j < numYNodes; j++){
 
-
-		this.nodes[i][j] = new SIMGraphs.Graph.Node(i * this.xPixels, j * this.yPixels + this.y, this.xPixels, this.yPixels, i, j);		
+		this.nodes[i][j] = new SIMGraphs.Graph.Node(i * this.xPixels + this.x, j * this.yPixels, this.xPixels, this.yPixels, i, j);		
 		assert(this.nodes[i][j] !== undefined, "One of our nodes is undefined");
 	    }
 	}
@@ -229,6 +228,8 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 	
 	context.lineWidth = 0.1;
 	//draw bars down the y-axis
+	
+	/*
 	for(var i = 0; i < this.nodes.length; i++){
 	    context.beginPath();
 	    context.moveTo(i * this.xPixels, this.y);
@@ -247,13 +248,15 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes){
 	    context.closePath();
 	    context.stroke();
 	}
-
+	*/	
 	//TODO: draw panel here
+	/*
 	context.fillStyle = "black";
-	var middleOfPanel = this.height + (this.panelHeight * 0.5) + this.y;
+	//var middleOfPanel = this.height + (this.panelHeight * 0.5) + this.y;
+	var middleOfPanel = this.width + (this.panelWidth * 0.5) + this.x;
 	context.fillText(this.name, 0, middleOfPanel );
 	context.fillText(this.counter, this.width * 0.95, middleOfPanel);
-
+	*/
     }
 
 
@@ -426,7 +429,7 @@ SIMGraphs.Graph.Node = function(x, y, width, height, i, j){
 	this.y = y;
 	this.i = i;
 	this.j = j;
-//	console.log("This node's coordinates in the matrix are: (" + this.i + ", " + this.j + ")");
+
 	this.width = width;
 	this.height = height;
 	this.type = SIMGraphs.Graph.Node.UNEXPLORED;
@@ -461,13 +464,13 @@ SIMGraphs.Graph.Node = function(x, y, width, height, i, j){
     }
 
     this.drawBackground = function(context){
-	context.fillStyle = "#eee";
+	context.fillStyle = "#fbfbfb";
 	context.fillRect(this.x, this.y, this.width, this.height);	
     }
 
     this.drawOpen = function(context){
 
-	this.drawLegs(context);
+//	this.drawLegs(context);
 	this.drawCircle(context, 'white');
     }
     
@@ -482,14 +485,17 @@ SIMGraphs.Graph.Node = function(x, y, width, height, i, j){
 
     this.drawActive = function(context){
 	this.drawLegs(context);
-	this.drawCircle(context, 'black');
+	this.drawCircle(context, '#3a3a3a');
     }
+
 
     this.drawCircle = function(context, color){
 	context.beginPath();
         context.arc(this.x + (width * .5), this.y + (height * .5), this.radius, 0, 2*Math.PI, true);
         context.fillStyle = color;
-        context.fill();
+	context.fill();
+	context.strokeStyle = "black";
+	context.stroke();
         context.closePath();
     }
 
@@ -529,6 +535,8 @@ SIMGraphs.Graph.DEPTH = 0;
 SIMGraphs.Graph.BREADTH = 1;
 SIMGraphs.Graph.ASTAR = 2;
 
+SIMGraphs.Graph.GAP_BETWEEN_GRAPHS = 10;
+
 //for nodes
 SIMGraphs.Graph.Node.UNEXPLORED = 0;
 SIMGraphs.Graph.Node.OPEN = 1;
@@ -556,6 +564,93 @@ SIMGraphs.Button = function(){
     }
 
     this.init();
+}
+
+///////////////////////////////////////////////
+//UTILITY FUNCTIONS
+//Source: Prof. Adam A. Smith
+//////////////////////////////////////////////
+
+SIMGraphs.makeColors = function(color) {
+    var r=0, g=0, b=0;
+    if (color === "red" || color===undefined) r = 170;
+    else if (color === "orange") r = 200, g = 100;
+    else if (color === "yellow") r = g = 210;
+    else if (color === "green") g = 170, b=33;
+    else if (color === "cyan" || color === "teal") g = b = 170;
+    else if (color === "blue") b = 204;
+    else if (color === "purple") r = b = 128;
+    else if (color === "skyblue") r = 102, g = 153, b = 255;
+    else if (color === "rose") r = 204, b = 102;//r = 255, b = 127;
+    else if (color === "indigo") r = 111, b = 255;
+    else if (color === "amber") r = 220, g = 180;
+    else if (color === "chartreuse") r = 160, g = 200;
+    else if (color === "gray" || color === "grey") r = g = b = 128;
+
+    // calculate HSV
+    var h, s, v = Math.max(r,g,b);
+    var min = Math.min(r,g,b);
+    var delta = v-min;
+
+    if (v===0) h=s=0;
+    else {
+	s = delta/v;
+	if (r === v) h = (g-b)/delta;
+	else if (g === v) h = 2 + (b-r)/delta;
+	else h = 4 + (r-g)/delta;
+	if (h<0) h += 6;
+    }
+
+    var colors = new Array(5);
+    colors[5] = SIMGraphs.hsv2String(h, s, v*2.25);
+    colors[4] = SIMGraphs.hsv2String(h, s, v*1.5);
+    colors[3] = SIMGraphs.hsv2String(h, s, v);
+    colors[2] = SIMGraphs.hsv2String(h, s, v*2/3);
+    colors[1] = SIMGraphs.hsv2String(h, s, v*4/9);
+    colors[0] = SIMGraphs.hsv2String(h, s, v*0.25);
+
+    return colors;
+}
+
+SIMGraphs.hsv2String = function(h, s, v) {
+    var r, g, b;
+
+    // if we got brightness above allowed, adjust it back & take away saturation
+    if (v > 255) {
+	s -= (v-255)/255;
+	v = 255;
+	if (s < 0) s = 0;
+    }
+
+    // the actual HSV->RGB calculation
+    if (s===0) r = g = b = v;
+    else {
+	var i = Math.floor(h);
+	var f = h-i;
+	var p = v*(1-s), q = v*(1-s*f), t = v*(1-s*(1-f));
+	switch(i) {
+	    case 0: r = v; g = t; b = p; break;
+	    case 1: r = q; g = v; b = p; break;
+	    case 2: r = p; g = v; b = t; break;
+	    case 3: r = p; g = q; b = v; break;
+	    case 4: r = t; g = p; b = v; break;
+	    case 5: r = v; g = p; b = q; break;
+	    }
+    }
+
+    // final rounding/parsing
+    r = Math.round(r);
+    g = Math.round(g);
+    b = Math.round(b);
+
+    var string = "#";
+    if (r < 16) string += "0";
+    string += r.toString(16);
+    if (g < 16) string += "0";
+    string += g.toString(16);
+    if (b < 16) string += "0";
+    string += b.toString(16);
+    return string;
 }
 
 //An assertion function for testing
