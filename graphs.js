@@ -30,7 +30,7 @@ SIMGraphs.GraphCanvas = function(canvas){
 
 	//draw the board
 	this.isPlaying = true;//remove this
-	setInterval(this.draw.bind(this), 500);
+	this.timer = setInterval(this.draw.bind(this), 500);
     }
     
     this.makeGraphs = function(){
@@ -92,10 +92,14 @@ SIMGraphs.GraphCanvas = function(canvas){
     //should cause each graph to take one step
     //I'll need a counter at some point
     this.stepGraphs = function(){
+	console.log("In step Graphs");
+	var allGraphsFinished = true;
 	for(var i = 0; i < this.graphs.length; i++){
-	    this.graphs[i].algoStep();
-	    console.log("In step Graphs");
+	    if(!this.graphs[i].isFinished) allGraphsFinished = false;
+	    this.graphs[i].takeAlgoStep();
 	}
+	if(allGraphsFinished) clearInterval(this.timer);
+
     }
 
     //initialize our canvas
@@ -121,7 +125,7 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes, colo
     this.init = function(type, x, y, height, width){
 	console.log("Initializing our graphs");
 
-
+	
 	//first, figure out which type of graph we're using
 	if(type === SIMGraphs.Graph.DEPTH){
 	    this.type = SIMGraphs.Graph.DEPTH;
@@ -153,12 +157,15 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes, colo
 
 	this.x = x;
 	this.y = y;
+	this.isFinished = false;
 	this.panelHeight = 50;//about 50 pixels should be reserved for the name and
 	                      //and the counter
 	this.spaceBetweenGraphs = 10;//put about 10 pixels between graphs
 	this.height = height - this.panelHeight;
 	this.width = width - this.spaceBetweenGraphs;
 	this.counter = 0;
+	this.topOfPanel = this.y + this.height + (this.panelHeight * 0.25);
+
 	this.colors = SIMGraphs.makeColors(color);
 	
 	//get the dimensions for each node on the canvas
@@ -193,10 +200,9 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes, colo
 	}
 	if(this.type === SIMGraphs.Graph.ASTAR){
 	    this.openSet.push(this.curNode);
-	    console.log("we're in init");
-	    console.log(this.openSet.length);
-	    this.curNode.gScore = 0;//	    this.gScore[this.curNode] = 0;
-	    this.curNode.fScore = this.curNode.gScore + this.heuristicCostEstimate(this.curNode, this.goal);//	    this.fScore[this.curNode] = this.gScore[this.curNode] + this.heuristicCostEstimate(this.curNode, this.goal);
+
+	    this.curNode.gScore = 0;
+	    this.curNode.fScore = this.curNode.gScore + this.heuristicCostEstimate(this.curNode, this.goal);
 	    assert(this.curNode.fScore !== undefined, "this.curNode.fScore is undefined");
 	    assert(this.curNode.gScore !== undefined, "this.curNode.gScore is undefined");
 	}
@@ -216,42 +222,28 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes, colo
 	context.save();
 	for(var i = 0;i< this.nodes.length; i++){
 	    for(var j = 0; j < this.nodes[i].length; j++){
+		if(this.isFinished) this.nodes[i][j].offset = 2;
 		this.nodes[i][j].draw(context);
 	    }
 	}
 	context.restore();
-	
-	context.lineWidth = 0.1;
-	//draw bars down the y-axis
-	
-	/*
-	for(var i = 0; i < this.nodes.length; i++){
-	    context.beginPath();
-	    context.moveTo(i * this.xPixels, this.y);
-	    context.lineTo(i * this.xPixels, this.y + this.height);
-	    context.closePath();
-	    context.stroke();
-	}
 
+	this.drawPanel(context);
+    }
 
-	//draw bars along the x-axis
-	//the inner array should all be the same length so using the zero-index should be fine.
-	for(var j = 0; j < this.nodes[0].length; j++){
-	    context.beginPath();
-	    context.moveTo(this.x, j * this.yPixels + this.y);
-	    context.lineTo(this.x + this.width, j * this.yPixels + this.y);
-	    context.closePath();
-	    context.stroke();
-	}
-	*/	
-	//TODO: draw panel here
-	/*
+    this.drawPanel = function(context) {
+	context.save();
 	context.fillStyle = "black";
-	//var middleOfPanel = this.height + (this.panelHeight * 0.5) + this.y;
-	var middleOfPanel = this.width + (this.panelWidth * 0.5) + this.x;
-	context.fillText(this.name, 0, middleOfPanel );
-	context.fillText(this.counter, this.width * 0.95, middleOfPanel);
-	*/
+	context.fillText(this.name, this.x, this.topOfPanel);
+	this.drawCounter(context);
+	context.restore();
+    }
+
+    this.drawCounter = function(context){
+	context.save();
+	context.fillStyle = "black";
+	context.fillText(this.counter, (this.width + this.x) * 0.95, this.topOfPanel);	
+	context.restore();
     }
 
 
@@ -259,12 +251,11 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes, colo
     //DEPTH-FIRST SEARCH
     ////////////////////////////////////////////////////////////////////
     this.depthFirstStep = function(){
-//	console.log("in depth first step");
-//	console.log(this.stack.length);
-	if(this.stack.length === 0) return;
+
+	if(this.stack.length === 0 || this.isFinished) return;
 	this.curNode.type = SIMGraphs.Graph.Node.CLOSED;
 	this.curNode = this.stack.pop();
-	if(this.curNode.type === SIMGraphs.Graph.Node.GOAL) this.stack = [];//a dirty hack but I still wanna ponder how to do this.
+	if(this.curNode.type === SIMGraphs.Graph.Node.GOAL) this.isFinished = true;//a dirty hack but I still wanna ponder how to do this.
 	this.curNode.type = SIMGraphs.Graph.Node.ACTIVE;
 
 	var arr = this.getNeighborNodes(this.curNode);
@@ -280,18 +271,27 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes, colo
 	}
     }
 
+    /*
+      A launcher function for each graph's algorithm.
+     */
+    this.takeAlgoStep = function(){
+	if(this.isFinished) return;
+	this.algoStep();
+	this.counter++;
+    }
+
     ///////////////////////////////////////////////////////////////////////
     //BREADTH-FIRST SEARCH
     //////////////////////////////////////////////////////////////////////
 
     this.breadthFirstStep = function(){
 
-	if(this.queue.length === 0) return;
+	if(this.queue.length === 0 || this.isFinished) return;
 
 	this.curNode.type = SIMGraphs.Graph.Node.CLOSED;
 	this.curNode = this.queue.shift();
 
-	if(this.curNode.type === SIMGraphs.Graph.Node.GOAL) this.queue = [];
+	if(this.curNode.type === SIMGraphs.Graph.Node.GOAL) this.isFinished = true;
 	this.curNode.type = SIMGraphs.Graph.Node.ACTIVE;
 
 	var arr = this.getNeighborNodes(this.curNode);
@@ -316,27 +316,27 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes, colo
 
 	console.log("We're in aStarStep");
 	console.log(this.openSet.length);
-	if(this.openSet.length === 0) return;
+	if(this.openSet.length === 0 || this.isFinished) return;
 	console.log("Type of curNode is ");
-//	console.log(typeof this.curNode);
+
 	console.log(this.curNode);
 
 	this.curNode.type = SIMGraphs.Graph.Node.CLOSED;
 	this.curNode = this.getNodeWithLowestFScore();
 	//	assert(typeof this.curNode !== 'string');
 
-	if(this.curNode.type === SIMGraphs.Graph.Node.GOAL) this.openSet = [];
+	if(this.curNode.type === SIMGraphs.Graph.Node.GOAL) this.isFinished = true;
 	this.curNode.type = SIMGraphs.Graph.Node.ACTIVE;
 	
 	var arr = this.getNeighborNodes(this.curNode);
 	
 	for(var i = 0; i < arr.length; i++){
 	    if(arr[i].type === SIMGraphs.Graph.Node.CLOSED) continue;
-	    var tentativeGScore = this.curNode.gScore + this.distanceBetween(this.curNode, arr[i]);// this.gScore[this.curNode] + this.distanceBetween(this.curNode, arr[i]);
-	    //	    assert(typeof this.curNode !== 'string');
+	    var tentativeGScore = this.curNode.gScore + this.distanceBetween(this.curNode, arr[i]);
+
 	    if(arr[i].type !== SIMGraphs.Graph.Node.OPEN || tentativeGScore < arr[i].gScore){
-		arr[i].gScore = tentativeGScore;//this.gScore[arr[i]] = tentativeGScore;
-		arr[i].fScore = arr[i].gScore + this.heuristicCostEstimate(arr[i], this.goal);//		this.fScore[arr[i]] = gScore[arr[i]] + this.heuristicCostEstimate(arr[i], this.goal);
+		arr[i].gScore = tentativeGScore;
+		arr[i].fScore = arr[i].gScore + this.heuristicCostEstimate(arr[i], this.goal);
 		if(arr[i].type === SIMGraphs.Graph.Node.GOAL){
 		    this.openSet.push(arr[i]);
 		}
@@ -416,7 +416,7 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes, colo
 */
 SIMGraphs.Graph.Node = function(x, y, width, height, i, j, colors){
 
-    this.init = function(x, y){
+    this.init = function(x, y, width, height, i, j, colors){
 	
 	this.x = x;
 	this.y = y;
@@ -436,7 +436,6 @@ SIMGraphs.Graph.Node = function(x, y, width, height, i, j, colors){
     this.draw = function(context){
 
 	//right now, give each node a light grayish background color
-
 	this.drawBackground(context);
 
 	//if its the goal node, just put a green node and return
@@ -472,7 +471,7 @@ SIMGraphs.Graph.Node = function(x, y, width, height, i, j, colors){
     
     this.drawClosed = function(context){
 	this.drawLegs(context);
-	this.drawCircle(context, colors[5]);
+	this.drawCircle(context, colors[5-this.offset]);
     }
 
     this.drawGoal = function(context){
@@ -522,7 +521,7 @@ SIMGraphs.Graph.Node = function(x, y, width, height, i, j, colors){
     }
 
 
-    this.init(x, y);
+    this.init(x, y, width, height, i, j, colors);
 }
 
 
