@@ -132,7 +132,6 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes, colo
 	    this.algoStep = this.depthFirstStep;
 	    this.name = "Depth First Search";
 	    this.stack = [];
-	    this.parentMap = {};
 	    if(color === undefined) color = "red";
 	}
 
@@ -165,6 +164,7 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes, colo
 	this.height = height - this.panelHeight;
 	this.width = width - this.spaceBetweenGraphs;
 	this.counter = 0;
+	this.parentMap = {};
 	this.topOfPanel = this.y + this.height + (this.panelHeight * 0.25);
 
 	this.colors = SIMGraphs.makeColors(color);
@@ -302,22 +302,32 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes, colo
 
     this.breadthFirstStep = function(){
 
-	if(this.queue.length === 0 || this.isFinished) return;
+	if(this.queue.length === 0) {
+	    this.finish();
+	}
+
+	if(this.isFinished) return;
 
 	this.curNode.type = SIMGraphs.Graph.Node.CLOSED;
 	this.curNode = this.queue.shift();
 
-	if(this.curNode.type === SIMGraphs.Graph.Node.GOAL) this.isFinished = true;
+	if(this.curNode.type === SIMGraphs.Graph.Node.GOAL) {
+	    this.finish();
+	    this.retracePath();
+	    return;
+	}
 	this.curNode.type = SIMGraphs.Graph.Node.ACTIVE;
 
 	var arr = this.getNeighborNodes(this.curNode);
 	
 	for(var i = 0; i < arr.length; i++){
 	    if(arr[i].type === SIMGraphs.Graph.Node.UNEXPLORED){
+		this.parentMap[arr[i].key] = this.curNode;
 		arr[i].type = SIMGraphs.Graph.Node.OPEN;
 		this.queue.push(arr[i]);
 	    }
 	    else if(arr[i].type === SIMGraphs.Graph.Node.GOAL){
+		this.parentMap[arr[i].key] = this.curNode;
 		this.queue.push(arr[i]);
 	    }
 	}
@@ -332,16 +342,21 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes, colo
 
 	console.log("We're in aStarStep");
 	console.log(this.openSet.length);
-	if(this.openSet.length === 0 || this.isFinished) return;
-	console.log("Type of curNode is ");
+	if(this.openSet.length === 0){
+	    this.finish();
+	}
 
-	console.log(this.curNode);
+	if(this.isFinished) return;
 
 	this.curNode.type = SIMGraphs.Graph.Node.CLOSED;
 	this.curNode = this.getNodeWithLowestFScore();
 	//	assert(typeof this.curNode !== 'string');
 
-	if(this.curNode.type === SIMGraphs.Graph.Node.GOAL) this.isFinished = true;
+	if(this.curNode.type === SIMGraphs.Graph.Node.GOAL) {
+	    this.finish();
+	    this.retracePath();
+	    return;
+	}
 	this.curNode.type = SIMGraphs.Graph.Node.ACTIVE;
 	
 	var arr = this.getNeighborNodes(this.curNode);
@@ -351,6 +366,7 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes, colo
 	    var tentativeGScore = this.curNode.gScore + this.distanceBetween(this.curNode, arr[i]);
 
 	    if(arr[i].type !== SIMGraphs.Graph.Node.OPEN || tentativeGScore < arr[i].gScore){
+		this.parentMap[arr[i].key] = this.curNode;
 		arr[i].gScore = tentativeGScore;
 		arr[i].fScore = arr[i].gScore + this.heuristicCostEstimate(arr[i], this.goal);
 		if(arr[i].type === SIMGraphs.Graph.Node.GOAL){
@@ -414,12 +430,12 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes, colo
 	return arr;
     }
 
-    this.retracePath = function(){
+    this.retracePath2 = function(){
 	if(this.type === SIMGraphs.Graph.DEPTH){
 	    this.retraceDepthFirstPath();
 	}
 	else if(this.type === SIMGraphs.Graph.BREADTH){
-//	    this.retraceBreadthFirstPath();
+	    this.retraceBreadthFirstPath();
 	}
 	else if(this.type === SIMGraphs.Graph.ASTAR){
 //	    this.retraceAStarPath();
@@ -440,13 +456,17 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes, colo
 	}
     }
 
-    this.retraceDepthFirstPath = function(){
+    this.retracePath = function(){
 	var iter = this.goal;
 	iter.offset = 0;
 	while(iter !== undefined){
 	    iter.offset = 0;
 	    iter = this.parentMap[iter.key];
 	}
+    }
+
+    this.retraceBreadthFirstPath = function(){
+	var iter = goal;
     }
 
     this.init(type, x, y, height, width);
