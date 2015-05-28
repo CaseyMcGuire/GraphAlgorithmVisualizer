@@ -132,7 +132,7 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes, colo
 	    this.algoStep = this.depthFirstStep;
 	    this.name = "Depth First Search";
 	    this.stack = [];
-	    this.visited = [];//for path traceback
+	    this.parentMap = {};
 	    if(color === undefined) color = "red";
 	}
 
@@ -189,6 +189,7 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes, colo
 	//for right now, lets make the beginning node in the bottom left corner and the goal node
 	//in the top right corner
 	this.curNode = this.nodes[0][numYNodes - 1];//beginning active node
+	this.start = this.curNode;
 	this.goal = this.nodes[numXNodes - 5][0];//goal node
 	this.curNode.type = SIMGraphs.Graph.Node.ACTIVE;
 	this.goal.type = SIMGraphs.Graph.Node.GOAL;
@@ -222,7 +223,6 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes, colo
 	context.save();
 	for(var i = 0;i< this.nodes.length; i++){
 	    for(var j = 0; j < this.nodes[i].length; j++){
-		if(this.isFinished) this.nodes[i][j].offset = 2;
 		this.nodes[i][j].draw(context);
 	    }
 	}
@@ -263,25 +263,33 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes, colo
     ////////////////////////////////////////////////////////////////////
     this.depthFirstStep = function(){
 
-	if(this.stack.length === 0) this.isFinished = true;
+	if(this.stack.length === 0) {
+	    this.finish();
+	}
+
 	if(this.isFinished) return;
 
 	this.curNode.type = SIMGraphs.Graph.Node.CLOSED;
 	this.curNode = this.stack.pop();
-	if(this.curNode.type === SIMGraphs.Graph.Node.GOAL) this.isFinished = true;
+	if(this.curNode.type === SIMGraphs.Graph.Node.GOAL) {
+	    this.finish();
+	    this.retracePath();
+	}
 
-	this.visited.push(this.curNode);
+
 
 	this.curNode.type = SIMGraphs.Graph.Node.ACTIVE;
 	var arr = this.getNeighborNodes(this.curNode);
-	shuffle(arr);
+	shuffle(arr);//makes the path more winding
 	
 	for(var i = 0; i < arr.length; i++){
 	    if(arr[i].type === SIMGraphs.Graph.Node.UNEXPLORED){
+		this.parentMap[arr[i].key] = this.curNode;
 		arr[i].type = SIMGraphs.Graph.Node.OPEN;
 		this.stack.push(arr[i]);
 	    }
 	    else if(arr[i].type === SIMGraphs.Graph.Node.GOAL){
+		this.parentMap[arr[i].key] = this.curNode;
 		this.stack.push(arr[i]);
 	    }
 	}
@@ -354,7 +362,6 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes, colo
 		}
 	    }
 	}
-
     }
 
     //this should be replaced with a priority queue but we'll do linear search for right now
@@ -407,6 +414,41 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes, colo
 	return arr;
     }
 
+    this.retracePath = function(){
+	if(this.type === SIMGraphs.Graph.DEPTH){
+	    this.retraceDepthFirstPath();
+	}
+	else if(this.type === SIMGraphs.Graph.BREADTH){
+//	    this.retraceBreadthFirstPath();
+	}
+	else if(this.type === SIMGraphs.Graph.ASTAR){
+//	    this.retraceAStarPath();
+	}
+	else{
+	    throw new Error("Undefined Graph type");
+	}
+    }
+
+    this.finish = function(){
+	this.isFinished = true;
+	
+	//make nodes a little darker
+	for(var i = 0; i < numXNodes; i++){
+	    for(var j = 0; j < numYNodes; j++){
+		this.nodes[i][j].offset = 2;
+	    }
+	}
+    }
+
+    this.retraceDepthFirstPath = function(){
+	var iter = this.goal;
+	iter.offset = 0;
+	while(iter !== undefined){
+	    iter.offset = 0;
+	    iter = this.parentMap[iter.key];
+	}
+    }
+
     this.init(type, x, y, height, width);
 
 }
@@ -430,7 +472,9 @@ SIMGraphs.Graph.Node = function(x, y, width, height, i, j, colors){
 	this.y = y;
 	this.i = i;
 	this.j = j;
+	this.key = "(" + i + "," + j + ")";
 	this.offset = 0;//the offset to use for colors when we're done
+	this.partOfPath = false;
 
 	//note: this array is shared by all nodes in a graph. As such, DO NOT MODIFY IT
 	this.colors = colors;
@@ -480,6 +524,7 @@ SIMGraphs.Graph.Node = function(x, y, width, height, i, j, colors){
     this.drawClosed = function(context){
 	this.drawLegs(context);
 	this.drawCircle(context, colors[5-this.offset]);
+
     }
 
     this.drawGoal = function(context){
