@@ -132,6 +132,7 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes, colo
 	    this.algoStep = this.depthFirstStep;
 	    this.name = "Depth First Search";
 	    this.stack = [];
+	    this.visited = [];//for path traceback
 	    if(color === undefined) color = "red";
 	}
 
@@ -218,7 +219,6 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes, colo
 
 	context.stroke();
 	context.lineWidth = 1;
-	//console.log("hellol");
 	context.save();
 	for(var i = 0;i< this.nodes.length; i++){
 	    for(var j = 0; j < this.nodes[i].length; j++){
@@ -239,6 +239,9 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes, colo
 	context.restore();
     }
 
+    /*
+      Draws the counter on the lower right-hand corner of a graph's panel.
+     */
     this.drawCounter = function(context){
 	context.save();
 	context.fillStyle = "black";
@@ -246,19 +249,32 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes, colo
 	context.restore();
     }
 
+    /*
+      A launcher function for each graph's algorithm.
+     */
+    this.takeAlgoStep = function(){
+	if(this.isFinished) return;
+	this.algoStep();
+	this.counter++;
+    }
 
     /////////////////////////////////////////////////////////////////////
     //DEPTH-FIRST SEARCH
     ////////////////////////////////////////////////////////////////////
     this.depthFirstStep = function(){
 
-	if(this.stack.length === 0 || this.isFinished) return;
+	if(this.stack.length === 0) this.isFinished = true;
+	if(this.isFinished) return;
+
 	this.curNode.type = SIMGraphs.Graph.Node.CLOSED;
 	this.curNode = this.stack.pop();
-	if(this.curNode.type === SIMGraphs.Graph.Node.GOAL) this.isFinished = true;//a dirty hack but I still wanna ponder how to do this.
-	this.curNode.type = SIMGraphs.Graph.Node.ACTIVE;
+	if(this.curNode.type === SIMGraphs.Graph.Node.GOAL) this.isFinished = true;
 
+	this.visited.push(this.curNode);
+
+	this.curNode.type = SIMGraphs.Graph.Node.ACTIVE;
 	var arr = this.getNeighborNodes(this.curNode);
+	shuffle(arr);
 	
 	for(var i = 0; i < arr.length; i++){
 	    if(arr[i].type === SIMGraphs.Graph.Node.UNEXPLORED){
@@ -271,14 +287,6 @@ SIMGraphs.Graph = function(type, x, y, height, width, numXNodes, numYNodes, colo
 	}
     }
 
-    /*
-      A launcher function for each graph's algorithm.
-     */
-    this.takeAlgoStep = function(){
-	if(this.isFinished) return;
-	this.algoStep();
-	this.counter++;
-    }
 
     ///////////////////////////////////////////////////////////////////////
     //BREADTH-FIRST SEARCH
@@ -647,6 +655,29 @@ SIMGraphs.hsv2String = function(h, s, v) {
     string += b.toString(16);
     return string;
 }
+
+//Fisher-Yates shuffle
+//source: http://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array
+function shuffle(array) {
+  var currentIndex = array.length, temporaryValue, randomIndex ;
+
+  // While there remain elements to shuffle...
+  while (0 !== currentIndex) {
+
+    // Pick a remaining element...
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex -= 1;
+
+    // And swap it with the current element.
+    temporaryValue = array[currentIndex];
+    array[currentIndex] = array[randomIndex];
+    array[randomIndex] = temporaryValue;
+  }
+
+  return array;
+}
+
+
 
 //An assertion function for testing
 //http://stackoverflow.com/questions/15313418/javascript-assert
